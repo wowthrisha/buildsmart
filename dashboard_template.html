@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildSmart — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-0: #050505;
+    --bg-1: #080808;
+    --bg-2: #0f0f0f;
+    --bg-3: #151515;
+    --bg-4: #1c1c1c;
+    --border: rgba(255,255,255,0.06);
+    --border-bright: rgba(255,255,255,0.12);
+    --text-primary: #f0f0f0;
+    --text-secondary: #888;
+    --text-tertiary: #444;
+
+    /* Accent per page — default is blue (approval flow) */
+    --accent: #2979FF;
+    --accent-dim: rgba(41,121,255,0.12);
+    --accent-glow: rgba(41,121,255,0.35);
+    --accent-subtle: rgba(41,121,255,0.06);
+
+    --sidebar-w: 260px;
+    --topbar-h: 60px;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  /* ─── Page themes ───────────────────────────────────── */
+  body[data-page="approval_flow"]        { --accent:#2979FF; --accent-dim:rgba(41,121,255,.12); --accent-glow:rgba(41,121,255,.35); --accent-subtle:rgba(41,121,255,.06); }
+  body[data-page="document_management"]  { --accent:#39FF82; --accent-dim:rgba(57,255,130,.12); --accent-glow:rgba(57,255,130,.35); --accent-subtle:rgba(57,255,130,.06); }
+  body[data-page="stakeholder_collab"]   { --accent:#BF5FFF; --accent-dim:rgba(191,95,255,.12); --accent-glow:rgba(191,95,255,.35); --accent-subtle:rgba(191,95,255,.06); }
+  body[data-page="submission_validation"]{ --accent:#FF6B1A; --accent-dim:rgba(255,107,26,.12); --accent-glow:rgba(255,107,26,.35); --accent-subtle:rgba(255,107,26,.06); }
+  body[data-page="project_insights"]     { --accent:#FFD600; --accent-dim:rgba(255,214,0,.12); --accent-glow:rgba(255,214,0,.35); --accent-subtle:rgba(255,214,0,.06); }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-0);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── Layout shell ──────────────────────────────────── */
+  .shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-rows: var(--topbar-h) 1fr;
+    min-height: 100vh;
+  }
+
+  /* ─── Sidebar ───────────────────────────────────────── */
+  .sidebar {
+    grid-row: 1 / 3;
+    background: var(--bg-1);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sidebar::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: -80px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    opacity: 0.25;
+    pointer-events: none;
+    transition: background 0.5s;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    height: var(--topbar-h);
+  }
+
+  .logo-mark {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 0 14px var(--accent-glow);
+    transition: box-shadow 0.4s;
+    flex-shrink: 0;
+  }
+
+  .logo-mark svg { width: 14px; height: 14px; fill: #000; }
+
+  .logo-text {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+  }
+
+  .logo-text span {
+    color: var(--accent);
+    transition: color 0.4s;
+  }
+
+  .sidebar-section {
+    padding: 20px 14px 6px;
+  }
+
+  .sidebar-label {
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    padding: 0 10px;
+    margin-bottom: 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    margin-bottom: 2px;
+  }
+
+  .nav-item:hover {
+    background: var(--bg-3);
+    color: var(--text-primary);
+  }
+
+  .nav-item.active {
+    background: var(--accent-subtle);
+    color: var(--text-primary);
+  }
+
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 2.5px; height: 60%;
+    background: var(--accent);
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 8px var(--accent-glow);
+    transition: background 0.4s, box-shadow 0.4s;
+  }
+
+  .nav-icon {
+    width: 32px; height: 32px;
+    border-radius: 7px;
+    background: var(--bg-3);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .nav-item.active .nav-icon {
+    background: var(--accent-dim);
+  }
+
+  .nav-icon svg {
+    width: 15px; height: 15px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 500;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 1px 7px;
+    transition: background 0.4s, color 0.4s;
+  }
+
+  .sidebar-spacer { flex: 1; }
+
+  .sidebar-user {
+    padding: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .user-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #000);
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 10px var(--accent-glow);
+    transition: box-shadow 0.4s;
+  }
+
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 11px; color: var(--text-secondary); }
+
+  /* ─── Topbar ────────────────────────────────────────── */
+  .topbar {
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 28px;
+  }
+
+  .topbar-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .topbar-breadcrumb .crumb-active {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .crumb-sep { color: var(--text-tertiary); font-size: 11px; }
+
+  .topbar-spacer { flex: 1; }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tb-btn {
+    width: 34px; height: 34px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .tb-btn:hover { background: var(--bg-4); color: var(--text-primary); border-color: var(--border-bright); }
+
+  .tb-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  .notif-dot {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: 1.5px solid var(--bg-1);
+    box-shadow: 0 0 6px var(--accent-glow);
+    transition: background 0.4s, box-shadow 0.4s;
+  }
+
+  .tb-primary {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 14px;
+    height: 34px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: #000;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 0 16px var(--accent-glow);
+    transition: all 0.3s;
+    letter-spacing: -0.2px;
+  }
+
+  .tb-primary:hover { filter: brightness(1.1); box-shadow: 0 0 24px var(--accent-glow); }
+  .tb-primary svg { width: 13px; height: 13px; stroke: #000; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ─── Main content ──────────────────────────────────── */
+  .main {
+    background: var(--bg-0);
+    overflow-y: auto;
+    padding: 32px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  /* ─── Page header ───────────────────────────────────── */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .page-title-group {}
+
+  .page-eyebrow {
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--accent);
+    transition: color 0.4s;
+    margin-bottom: 6px;
+  }
+
+  .page-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 38px;
+    font-weight: 300;
+    letter-spacing: -1.5px;
+    line-height: 1.0;
+    color: var(--text-primary);
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    max-width: 380px;
+    line-height: 1.6;
+  }
+
+  .page-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .btn-ghost {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-ghost:hover { background: var(--bg-3); color: var(--text-primary); border-color: var(--border-bright); }
+  .btn-ghost svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ─── Stat cards row ────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+
+  .stat-card {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 22px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: default;
+  }
+
+  .stat-card:hover {
+    border-color: var(--border-bright);
+    transform: translateY(-1px);
+  }
+
+  .stat-card.highlight {
+    border-color: var(--accent-dim);
+    background: var(--accent-subtle);
+  }
+
+  .stat-card.highlight::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+    transition: background 0.4s, box-shadow 0.4s;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .stat-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-glow);
+    transition: background 0.4s, box-shadow 0.4s;
+  }
+
+  .stat-value {
+    font-size: 30px;
+    font-weight: 300;
+    letter-spacing: -1.5px;
+    line-height: 1;
+    color: var(--text-primary);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .stat-change {
+    font-size: 11px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stat-change.up { color: #39FF82; }
+  .stat-change.down { color: #FF6B6B; }
+  .stat-change svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ─── Two-column content area ───────────────────────── */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 14px;
+    align-items: start;
+  }
+
+  /* ─── Panel card ────────────────────────────────────── */
+  .panel {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: -0.2px;
+  }
+
+  .panel-title-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .panel-action {
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    transition: opacity 0.2s;
+    text-decoration: none;
+  }
+
+  .panel-action:hover { opacity: 0.7; }
+
+  /* ─── Pipeline / approval steps ────────────────────── */
+  .pipeline {
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .pipeline-step {
+    display: flex;
+    gap: 16px;
+    position: relative;
+  }
+
+  .pipeline-step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 32px;
+    bottom: -12px;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .step-node {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-node.done {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  .step-node.active {
+    background: var(--accent);
+    box-shadow: 0 0 16px var(--accent-glow);
+    animation: pulse-node 2.5s ease infinite;
+  }
+
+  .step-node.pending {
+    background: var(--bg-3);
+    border: 1px solid var(--border-bright);
+  }
+
+  @keyframes pulse-node {
+    0%, 100% { box-shadow: 0 0 16px var(--accent-glow); }
+    50%       { box-shadow: 0 0 28px var(--accent-glow); }
+  }
+
+  .step-node svg {
+    width: 13px; height: 13px;
+    stroke: currentColor; fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  .step-node.done svg { color: var(--accent); }
+  .step-node.active svg { color: #000; }
+  .step-node.pending svg { color: var(--text-tertiary); }
+
+  .step-body {
+    flex: 1;
+    padding-bottom: 20px;
+  }
+
+  .step-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .step-status-pill {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .pill-done { background: var(--accent-dim); color: var(--accent); }
+  .pill-active { background: var(--accent); color: #000; }
+  .pill-pending { background: var(--bg-3); color: var(--text-tertiary); }
+
+  .step-meta {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .step-assignees {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .assignee-chip {
+    height: 22px;
+    padding: 0 9px;
+    background: var(--bg-3);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .assignee-chip .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    transition: background 0.4s;
+  }
+
+  /* ─── Document list ─────────────────────────────────── */
+  .doc-list {
+    padding: 6px 0;
+  }
+
+  .doc-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+
+  .doc-item:last-child { border-bottom: none; }
+  .doc-item:hover { background: var(--bg-2); }
+
+  .doc-icon {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    background: var(--accent-dim);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  .doc-icon svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.4s; }
+
+  .doc-info { flex: 1; min-width: 0; }
+  .doc-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .doc-meta { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+
+  .doc-status {
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+  }
+
+  .ds-approved { background: rgba(57,255,130,0.1); color: #39FF82; }
+  .ds-review   { background: var(--accent-dim); color: var(--accent); }
+  .ds-rejected { background: rgba(255,107,107,0.1); color: #FF6B6B; }
+  .ds-draft    { background: var(--bg-3); color: var(--text-secondary); }
+
+  /* ─── Activity / comment feed ───────────────────────── */
+  .feed { padding: 8px 0; }
+
+  .feed-item {
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+  }
+
+  .feed-item:last-child { border-bottom: none; }
+
+  .feed-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #000;
+    margin-top: 1px;
+  }
+
+  .feed-body { flex: 1; }
+  .feed-name { font-size: 12.5px; font-weight: 500; }
+  .feed-text { font-size: 12px; color: var(--text-secondary); margin-top: 2px; line-height: 1.5; }
+  .feed-time { font-size: 10.5px; color: var(--text-tertiary); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  /* ─── Mini progress bar ─────────────────────────────── */
+  .mini-progress {
+    height: 3px;
+    background: var(--bg-3);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+
+  .mini-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 20px;
+    box-shadow: 0 0 6px var(--accent-glow);
+    transition: background 0.4s, box-shadow 0.4s;
+  }
+
+  /* ─── Project cards ─────────────────────────────────── */
+  .project-list { padding: 6px 0; }
+
+  .project-item {
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .project-item:last-child { border-bottom: none; }
+  .project-item:hover { background: var(--bg-2); }
+
+  .project-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .project-name { font-size: 13px; font-weight: 500; }
+  .project-loc  { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+
+  .project-phase {
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    white-space: nowrap;
+    transition: background 0.4s, color 0.4s;
+  }
+
+  .project-progress-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .progress-label { font-size: 11px; color: var(--text-secondary); }
+  .progress-pct { font-size: 12px; font-weight: 500; color: var(--accent); font-family: 'DM Mono', monospace; transition: color 0.4s; }
+
+  /* ─── Chart placeholder ─────────────────────────────── */
+  .chart-area {
+    padding: 22px;
+    position: relative;
+    height: 200px;
+  }
+
+  .chart-canvas { width: 100%; height: 100%; }
+
+  /* ─── Scrollbar styling ─────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
+
+  /* ─── Transitions for accent changes ────────────────── */
+  .sidebar::before, .logo-mark, .logo-text span,
+  .nav-item.active, .nav-item.active::before,
+  .nav-badge, .notif-dot, .tb-primary,
+  .stat-dot, .stat-card.highlight, .stat-card.highlight::after,
+  .step-node.done, .step-node.active,
+  .step-status-pill, .pill-done, .pill-active,
+  .assignee-chip .dot, .doc-icon, .doc-icon svg,
+  .mini-progress-fill, .project-phase, .progress-pct,
+  .panel-action, .page-eyebrow {
+    transition: all 0.45s ease;
+  }
+
+  /* ─── Fade-in animation ─────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .stats-grid, .content-grid {
+    animation: fadeUp 0.5s ease both;
+  }
+  .stats-grid { animation-delay: 0.05s; }
+  .content-grid { animation-delay: 0.12s; }
+</style>
+</head>
+<body data-page="approval_flow">
+
+<div class="shell">
+
+  <!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 14 14"><path d="M2 12 L7 2 L12 12 M4 8.5 H10" stroke="#000" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+      </div>
+      <span class="logo-text">Build<span>Smart</span></span>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Workspace</div>
+
+      <a class="nav-item" onclick="setPage('approval_flow', this)" data-pageid="approval_flow">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </div>
+        Approval Flow
+        <span class="nav-badge">3</span>
+      </a>
+
+      <a class="nav-item" onclick="setPage('document_management', this)" data-pageid="document_management">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        Document Management
+        <span class="nav-badge">12</span>
+      </a>
+
+      <a class="nav-item" onclick="setPage('stakeholder_collab', this)" data-pageid="stakeholder_collab">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        Stakeholder Collab
+        <span class="nav-badge">5</span>
+      </a>
+
+      <a class="nav-item" onclick="setPage('submission_validation', this)" data-pageid="submission_validation">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        Submission Validation
+      </a>
+
+      <a class="nav-item" onclick="setPage('project_insights', this)" data-pageid="project_insights">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        Project Insights
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Projects</div>
+      <a class="nav-item active" data-pageid="">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        All Projects
+      </a>
+      <a class="nav-item" data-pageid="">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        Pending Review
+        <span class="nav-badge">7</span>
+      </a>
+    </div>
+
+    <div class="sidebar-spacer"></div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">AR</div>
+      <div class="user-info">
+        <div class="user-name">Alex Rivera</div>
+        <div class="user-role">Project Lead</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════ TOPBAR ════════════════════════ -->
+  <header class="topbar">
+    <div class="topbar-breadcrumb">
+      <span>BuildSmart</span>
+      <span class="crumb-sep">›</span>
+      <span id="breadcrumb-active" class="crumb-active">Approval Flow</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <button class="tb-btn" title="Search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="tb-btn" title="Notifications">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <button class="tb-btn" title="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+      <button class="tb-primary" id="cta-btn">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span id="cta-label">New Submission</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════ MAIN ══════════════════════════ -->
+  <main class="main">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-title-group">
+        <div class="page-eyebrow" id="page-eyebrow">Workflow Module</div>
+        <h1 class="page-title" id="page-title">Approval Flow</h1>
+        <p class="page-subtitle" id="page-subtitle">Track submission stages, reviewer assignments, and real-time approval status across all active projects.</p>
+      </div>
+      <div class="page-header-actions">
+        <button class="btn-ghost">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="btn-ghost">
+          <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          Filter
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card highlight">
+        <div class="stat-label">
+          Active Submissions
+          <span class="stat-dot"></span>
+        </div>
+        <div class="stat-value">24</div>
+        <div class="stat-change up">
+          <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+          +4 this week
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pending Approval</div>
+        <div class="stat-value">09</div>
+        <div class="stat-change down">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          2 overdue
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg. Cycle Time</div>
+        <div class="stat-value">6.2<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">d</span></div>
+        <div class="stat-change up">
+          <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+          -1.4d vs last month
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Approval Rate</div>
+        <div class="stat-value">87<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">%</span></div>
+        <div class="stat-change up">
+          <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+          +3% vs last month
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+
+      <!-- Left column -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <!-- Active Pipeline -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Active Approval Pipeline</div>
+              <div class="panel-title-sub">Tower Complex A — Permit Package v3.1</div>
+            </div>
+            <a class="panel-action">View all →</a>
+          </div>
+          <div class="pipeline">
+
+            <div class="pipeline-step">
+              <div class="step-node done">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="step-body">
+                <div class="step-title">
+                  Document Upload &amp; Pre-check
+                  <span class="step-status-pill pill-done">Done</span>
+                </div>
+                <div class="step-meta">Completed Mar 1 · All 14 documents validated</div>
+                <div class="step-assignees">
+                  <div class="assignee-chip"><div class="dot"></div>J. Kim — Architect</div>
+                  <div class="assignee-chip"><div class="dot"></div>Auto-validator</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pipeline-step">
+              <div class="step-node done">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="step-body">
+                <div class="step-title">
+                  Internal Review
+                  <span class="step-status-pill pill-done">Done</span>
+                </div>
+                <div class="step-meta">Completed Mar 3 · 2 comments resolved</div>
+                <div class="step-assignees">
+                  <div class="assignee-chip"><div class="dot"></div>M. Chen — Sr. Engineer</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pipeline-step">
+              <div class="step-node active">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+              </div>
+              <div class="step-body">
+                <div class="step-title">
+                  Authority Submission
+                  <span class="step-status-pill pill-active">In Review</span>
+                </div>
+                <div class="step-meta">Since Mar 5 · Est. completion Mar 10</div>
+                <div class="step-assignees">
+                  <div class="assignee-chip"><div class="dot"></div>City Planning Dept.</div>
+                  <div class="assignee-chip"><div class="dot"></div>Fire Safety Board</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pipeline-step">
+              <div class="step-node pending">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+              <div class="step-body">
+                <div class="step-title">
+                  Final Permit Issuance
+                  <span class="step-status-pill pill-pending">Pending</span>
+                </div>
+                <div class="step-meta">Awaiting authority sign-off</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Document list -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Submission Documents</div>
+              <div class="panel-title-sub">14 files · Last updated 2h ago</div>
+            </div>
+            <a class="panel-action">Upload +</a>
+          </div>
+          <div class="doc-list">
+            <div class="doc-item">
+              <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <div class="doc-info">
+                <div class="doc-name">Architectural_Plans_v3.1.pdf</div>
+                <div class="doc-meta">48 pages · 12.4 MB · Mar 1</div>
+              </div>
+              <span class="doc-status ds-approved">Approved</span>
+            </div>
+            <div class="doc-item">
+              <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <div class="doc-info">
+                <div class="doc-name">Structural_Calculations_Final.pdf</div>
+                <div class="doc-meta">28 pages · 6.1 MB · Mar 1</div>
+              </div>
+              <span class="doc-status ds-review">In Review</span>
+            </div>
+            <div class="doc-item">
+              <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <div class="doc-info">
+                <div class="doc-name">Fire_Safety_Compliance_Report.pdf</div>
+                <div class="doc-meta">10 pages · 2.3 MB · Feb 28</div>
+              </div>
+              <span class="doc-status ds-rejected">Rejected</span>
+            </div>
+            <div class="doc-item">
+              <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <div class="doc-info">
+                <div class="doc-name">Environmental_Impact_Assessment.pdf</div>
+                <div class="doc-meta">32 pages · 9.8 MB · Mar 2</div>
+              </div>
+              <span class="doc-status ds-approved">Approved</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right column -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <!-- Projects -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Active Projects</div>
+            </div>
+            <a class="panel-action">All →</a>
+          </div>
+          <div class="project-list">
+            <div class="project-item">
+              <div class="project-top">
+                <div>
+                  <div class="project-name">Tower Complex A</div>
+                  <div class="project-loc">Downtown District · Permit Stage</div>
+                </div>
+                <span class="project-phase">Stage 3</span>
+              </div>
+              <div class="project-progress-row">
+                <span class="progress-label">Approval Progress</span>
+                <span class="progress-pct">74%</span>
+              </div>
+              <div class="mini-progress"><div class="mini-progress-fill" style="width:74%"></div></div>
+            </div>
+            <div class="project-item">
+              <div class="project-top">
+                <div>
+                  <div class="project-name">Riverside Office Park</div>
+                  <div class="project-loc">Waterfront Zone · Internal Review</div>
+                </div>
+                <span class="project-phase">Stage 2</span>
+              </div>
+              <div class="project-progress-row">
+                <span class="progress-label">Approval Progress</span>
+                <span class="progress-pct">41%</span>
+              </div>
+              <div class="mini-progress"><div class="mini-progress-fill" style="width:41%"></div></div>
+            </div>
+            <div class="project-item">
+              <div class="project-top">
+                <div>
+                  <div class="project-name">Heritage Quarter Renovation</div>
+                  <div class="project-loc">Old Town · Pre-submission</div>
+                </div>
+                <span class="project-phase">Stage 1</span>
+              </div>
+              <div class="project-progress-row">
+                <span class="progress-label">Approval Progress</span>
+                <span class="progress-pct">18%</span>
+              </div>
+              <div class="mini-progress"><div class="mini-progress-fill" style="width:18%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Recent Activity</div>
+            </div>
+            <a class="panel-action">See all →</a>
+          </div>
+          <div class="feed">
+            <div class="feed-item">
+              <div class="feed-avatar" style="background:var(--accent)">MC</div>
+              <div class="feed-body">
+                <div class="feed-name">M. Chen</div>
+                <div class="feed-text">Approved structural calculations, flagged fire report for revision</div>
+                <div class="feed-time">Today · 14:32</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-avatar" style="background:#39FF82">JK</div>
+              <div class="feed-body">
+                <div class="feed-name">J. Kim</div>
+                <div class="feed-text">Uploaded revised Architectural Plans v3.1 — 3 sheets updated</div>
+                <div class="feed-time">Today · 11:07</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-avatar" style="background:#BF5FFF">SB</div>
+              <div class="feed-body">
+                <div class="feed-name">S. Brandt</div>
+                <div class="feed-text">City Planning Dept. requested additional shadow studies for Block C</div>
+                <div class="feed-time">Yesterday · 16:55</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-avatar" style="background:#FF6B1A">AR</div>
+              <div class="feed-body">
+                <div class="feed-name">A. Rivera</div>
+                <div class="feed-text">Submitted Tower Complex A package to authority portal</div>
+                <div class="feed-time">Mar 5 · 09:20</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+  const PAGE_META = {
+    approval_flow: {
+      eyebrow: 'Workflow Module',
+      title: 'Approval Flow',
+      subtitle: 'Track submission stages, reviewer assignments, and real-time approval status across all active projects.',
+      breadcrumb: 'Approval Flow',
+      cta: 'New Submission',
+    },
+    document_management: {
+      eyebrow: 'Document Hub',
+      title: 'Document Management',
+      subtitle: 'Centralise, version, and distribute all construction documents with full audit trails and team access controls.',
+      breadcrumb: 'Document Management',
+      cta: 'Upload Document',
+    },
+    stakeholder_collab: {
+      eyebrow: 'Collaboration',
+      title: 'Stakeholder Collab',
+      subtitle: 'Unify communication across architects, engineers, contractors, and authority reviewers in a single workspace.',
+      breadcrumb: 'Stakeholder Collab',
+      cta: 'Invite Member',
+    },
+    submission_validation: {
+      eyebrow: 'Quality Control',
+      title: 'Submission Validation',
+      subtitle: 'Automated pre-submission checks that catch errors before they cause rejection cycles and costly delays.',
+      breadcrumb: 'Submission Validation',
+      cta: 'Run Validation',
+    },
+    project_insights: {
+      eyebrow: 'Analytics',
+      title: 'Project Insights',
+      subtitle: 'Visual intelligence on approval timelines, team performance, and bottleneck detection across your portfolio.',
+      breadcrumb: 'Project Insights',
+      cta: 'Export Report',
+    },
+  };
+
+  function setPage(pageId, clickedEl) {
+    // Update body theme
+    document.body.setAttribute('data-page', pageId);
+
+    // Update active nav item
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if (clickedEl) clickedEl.classList.add('active');
+
+    // Update text
+    const meta = PAGE_META[pageId];
+    document.getElementById('page-eyebrow').textContent = meta.eyebrow;
+    document.getElementById('page-title').textContent = meta.title;
+    document.getElementById('page-subtitle').textContent = meta.subtitle;
+    document.getElementById('breadcrumb-active').textContent = meta.breadcrumb;
+    document.getElementById('cta-label').textContent = meta.cta;
+  }
+</script>
+
+</body>
+</html>
