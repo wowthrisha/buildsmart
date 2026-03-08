@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, render_template, url_for, send_file
+content = '''from flask import Blueprint, request, redirect, render_template, url_for, send_file
 from extensions import db
 from models.document import Document, DocumentVersion, DocumentLog
 import os
@@ -57,3 +57,9 @@ def download_file(version_id):
 def logs():
     logs = DocumentLog.query.order_by(DocumentLog.timestamp.desc()).all()
     return render_template("logs.html", logs=logs)
+'''
+
+with open("routes/document_routes.py", "w", encoding="utf-8") as f:
+    f.write(content)
+
+print("SUCCESS - file written!")

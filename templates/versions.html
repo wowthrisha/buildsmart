@@ -1,0 +1,139 @@
+<html><head></head><body>{% extends "base.html" %}
+{% block title %}Versions · BuildSmart{% endblock %}
+{% block breadcrumb %}Document Versions{% endblock %}
+
+{% block topbar_right %}
+<a href="{{ url_for('document.repository') }}" class="btn bto">
+  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <polyline points="15 18 9 12 15 6"></polyline>
+  </svg>
+  Repository
+</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Document header card -->
+<div class="anim" style="display:flex;align-items:flex-start;gap:16px;
+  background:var(--surface-1);border:1px solid var(--border-dim);border-radius:10px;
+  padding:20px;margin-bottom:22px;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;right:0;width:130px;height:130px;
+    background:radial-gradient(circle at top right,var(--amber-lo) 0%,transparent 65%);
+    pointer-events:none;"></div>
+  <div class="fc">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+      <polyline points="13 2 13 9 20 9"></polyline>
+    </svg>
+  </div>
+  <div style="flex:1;min-width:0;">
+    <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:6px;">
+      <div style="font-family:var(--font-d);font-size:1.6rem;letter-spacing:0.04em;line-height:1;color:var(--text-0);">
+        Document #{{ document_id }}
+      </div>
+      <span class="bdg ba">{{ versions|length }} version{{ 's' if versions|length != 1 }}</span>
+    </div>
+    <div style="font-size:0.6rem;color:var(--text-2);">Full revision history below</div>
+  </div>
+  <div style="display:flex;gap:22px;flex-shrink:0;">
+    <div style="text-align:center;">
+      <div style="font-family:var(--font-d);font-size:1.6rem;color:var(--text-0);line-height:1;">{{ versions|length }}</div>
+      <div style="font-size:0.5rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-2);margin-top:3px;">Versions</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-family:var(--font-d);font-size:1.6rem;color:var(--text-0);line-height:1;">
+        v{{ versions[-1].version_number if versions else '—' }}
+      </div>
+      <div style="font-size:0.5rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-2);margin-top:3px;">Latest</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 290px;gap:18px;align-items:start;">
+
+  <!-- Version timeline -->
+  <div class="anim d1">
+    <div style="font-size:0.54rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-2);margin-bottom:14px;">
+      Version History
+    </div>
+
+    {% if versions %}
+    <div class="vt">
+      {% for v in versions|reverse %}
+      <div class="vt-item {% if loop.last %}latest{% endif %}">
+        <div class="vt-m">
+          <span class="vt-v">v{{ v.version_number }}</span>
+          {% if loop.last %}
+            <span class="bdg bg2">● Latest</span>
+          {% else %}
+            <span class="bdg bx">Archived</span>
+          {% endif %}
+          <span class="vt-d">{{ v.uploaded_at }}</span>
+        </div>
+        <div class="vt-a">
+          <a href="{{ url_for('document.download_file', version_id=v.id) }}" class="btn btg btn-sm">
+            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty">
+      <div class="empty-ico">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+          <polyline points="13 2 13 9 20 9"></polyline>
+        </svg>
+      </div>
+      <h3>No Versions Found</h3>
+      <p>Upload the first version of this document.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Upload new version panel -->
+  <div class="panel anim d2" style="position:sticky;top:70px;">
+    <div class="panel-head">
+      <span class="ph-ico">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </span>
+      <h2>Push New Version</h2>
+      <span class="ph-cnt">→ v{{ (versions|length) + 1 }}</span>
+    </div>
+    <div class="panel-body">
+      <form action="{{ url_for('document.upload_new_version', doc_id=document_id) }}" method="POST" enctype="multipart/form-data">
+        <div class="fg">
+          <label class="fl">File</label>
+          <label class="dz" style="padding:22px 14px;" onclick="event.stopPropagation()">
+            <div class="dz-icon" style="width:34px;height:34px;">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <div class="dz-title" style="font-size:0.7rem;">Drop or click to select</div>
+            <div class="dz-sel"></div>
+            <input type="file" name="file" required="">
+          </label>
+        </div>
+        <button type="submit" class="btn bta" style="width:100%;justify-content:center;">
+          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Commit v{{ (versions|length) + 1 }}
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+</body></html>
