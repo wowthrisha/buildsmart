@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}BuildSmart{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&family=Libre+Baskerville:ital@0;1&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --black:      #080809;
+      --surface-0:  #0e0e10;
+      --surface-1:  #141416;
+      --surface-2:  #1c1c20;
+      --surface-3:  #252529;
+      --border-dim: #1f1f24;
+      --border:     #2e2e36;
+      --border-hi:  #3d3d4a;
+      --amber:      #3b82f6;
+      --amber-lo:   rgba(59,130,246,0.07);
+      --amber-mid:  rgba(59,130,246,0.16);
+      --amber-glow: rgba(59,130,246,0.35);
+      --text-0:     #ffffff;
+      --text-1:     #e2e2f0;
+      --text-2:     #9898b8;
+      --text-3:     #2e2e38;
+      --red:        #e8445a;
+      --green:      #2ed88a;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+      --sidebar-w: 228px;
+      --topbar-h:  56px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; }
+    body {
+      background: var(--black);
+      color: var(--text-0);
+      font-family: var(--font-mono);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    /* grain */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999;
+    }
+
+    /* -- SIDEBAR ----------------------------------------- */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--surface-0);
+      border-right: 1px solid var(--border-dim);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+    }
+    .sidebar-glow {
+      position: absolute;
+      top: 0; right: -1px; bottom: 0; width: 1px;
+      background: linear-gradient(180deg, transparent 0%, var(--amber) 35%, var(--amber) 65%, transparent 100%);
+      opacity: 0.12;
+    }
+
+    .logo-wrap {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid var(--border-dim);
+      position: relative;
+    }
+    .logo-wrap::after {
+      content: '&#9679; LIVE';
+      position: absolute; top: 10px; right: 12px;
+      font-size: 0.58rem; letter-spacing: 0.16em;
+      font-family: var(--font-mono);
+      color: var(--green); opacity: 0.9;
+    }
+    .logo-name {
+      font-family: var(--font-display);
+      font-size: 1.5rem; letter-spacing: 0.04em; line-height: 1;
+      color: var(--text-0);
+    }
+    .logo-name span { color: var(--amber); }
+    .logo-tag {
+      font-size: 0.68rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--text-2); margin-top: 4px;
+    }
+
+    .sys-bar {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 18px;
+      background: var(--surface-1);
+      border-bottom: 1px solid var(--border-dim);
+      font-size: 0.65rem; color: var(--text-2); letter-spacing: 0.1em;
+    }
+    .sys-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 5px var(--green);
+      animation: blink 2.4s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+    .nav-group { padding: 14px 12px 4px; }
+    .nav-group-label {
+      font-size: 0.6rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--text-3);
+      padding: 0 7px; margin-bottom: 5px;
+    }
+    .nav-link {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 9px; border-radius: 4px;
+      color: var(--text-2); text-decoration: none;
+      font-size: 0.82rem; letter-spacing: 0.01em;
+      transition: all 0.14s; margin-bottom: 1px; position: relative;
+    }
+    .nav-icon {
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px;
+      background: var(--surface-2); border: 1px solid var(--border-dim);
+      transition: all 0.14s; flex-shrink: 0;
+    }
+    .nav-link:hover { color: var(--text-1); background: var(--surface-2); }
+    .nav-link:hover .nav-icon { border-color: var(--border); }
+    .nav-link.active { color: var(--amber); background: var(--amber-lo); }
+    .nav-link.active .nav-icon { background: var(--amber-mid); border-color: rgba(59,130,246,0.28); }
+    .nav-link.active::before {
+      content: ''; position: absolute; left: 0; top: 22%; bottom: 22%;
+      width: 2px; background: var(--amber); border-radius: 2px;
+    }
+    .nav-badge {
+      margin-left: auto; font-size: 0.65rem; font-weight: 700;
+      color: #fff; background: var(--amber);
+      padding: 1px 6px; border-radius: 2px;
+    }
+
+    .sidebar-foot {
+      margin-top: auto; padding: 13px 18px;
+      border-top: 1px solid var(--border-dim);
+    }
+    .foot-row {
+      display: flex; justify-content: space-between;
+      font-size: 0.6rem; color: var(--text-3); margin-bottom: 4px;
+    }
+    .foot-row span:last-child { color: var(--text-2); }
+    .foot-copy {
+      font-size: 0.58rem; color: var(--text-3); letter-spacing: 0.1em;
+      text-align: center; margin-top: 7px; padding-top: 7px;
+      border-top: 1px solid var(--border-dim);
+    }
+
+    /* -- MAIN -------------------------------------------- */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1; display: flex; flex-direction: column; min-height: 100vh;
+    }
+
+    .topbar {
+      height: var(--topbar-h);
+      background: var(--surface-0);
+      border-bottom: 1px solid var(--border-dim);
+      display: flex; align-items: center;
+      padding: 0 26px; gap: 12px;
+      position: sticky; top: 0; z-index: 90;
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; color: var(--text-2);
+    }
+    .breadcrumb .sep { color: var(--border-hi); }
+    .breadcrumb .bc-cur { color: var(--text-1); font-weight: 500; }
+    .topbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+    /* -- BUTTONS ----------------------------------------- */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 15px; border-radius: 3px;
+      font-family: var(--font-mono); font-size: 0.75rem;
+      font-weight: 600; cursor: pointer;
+      text-decoration: none; transition: all 0.14s;
+      border: none; letter-spacing: 0.05em; white-space: nowrap;
+    }
+    .btn-amber { background: var(--amber); color: #fff; }
+    .btn-amber:hover { background: #3b82f6; transform: translateY(-1px); box-shadow: 0 5px 20px var(--amber-glow); }
+    .btn-outline { background: transparent; color: var(--text-1); border: 1px solid var(--border); }
+    .btn-outline:hover { background: var(--surface-2); border-color: var(--border-hi); color: var(--text-0); }
+    .btn-ghost { background: transparent; color: var(--text-2); border: 1px solid var(--border-dim); }
+    .btn-ghost:hover { background: var(--surface-2); color: var(--text-1); }
+    .btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(232,68,90,0.18); }
+    .btn-danger:hover { background: rgba(232,68,90,0.07); }
+    .btn-sm { padding: 5px 10px; font-size: 0.7rem; }
+    .btn svg { flex-shrink: 0; }
+
+    /* -- FLASH ------------------------------------------- */
+    .flash-zone { padding: 14px 26px 0; }
+    .flash {
+      display: flex; align-items: center; gap: 9px;
+      padding: 10px 15px; border-radius: 5px;
+      font-size: 0.78rem; margin-bottom: 8px;
+      animation: slideIn 0.22s ease;
+    }
+    @keyframes slideIn { from{opacity:0;transform:translateY(-7px)} to{opacity:1;transform:none} }
+    .flash-success { background: rgba(46,216,138,0.07); border: 1px solid rgba(46,216,138,0.18); color: var(--green); }
+    .flash-error   { background: rgba(232,68,90,0.07);  border: 1px solid rgba(232,68,90,0.18);  color: var(--red); }
+
+    /* -- PAGE -------------------------------------------- */
+    .page { flex: 1; padding: 26px; }
+
+    /* Page header */
+    .ph { margin-bottom: 26px; }
+    .ph-eye {
+      font-size: 0.6rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--amber); margin-bottom: 7px;
+    }
+    .ph-title {
+      font-family: var(--font-display);
+      font-size: 2.2rem; letter-spacing: 0.03em; line-height: 1;
+      color: var(--text-0);
+    }
+    .ph-sub { font-size: 0.85rem; color: var(--text-2); margin-top: 6px; line-height: 1.6; }
+    .ph-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+
+    /* -- STAT ROW ---------------------------------------- */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 12px; margin-bottom: 22px;
+    }
+    .stat-tile {
+      background: var(--surface-1);
+      border: 1px solid var(--border-dim);
+      border-radius: 7px; padding: 15px 16px;
+      position: relative; overflow: hidden;
+      transition: border-color 0.18s;
+    }
+    .stat-tile:hover { border-color: var(--border); }
+    .stat-tile::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--amber), transparent);
+      opacity: 0; transition: opacity 0.22s;
+    }
+    .stat-tile:hover::before { opacity: 0.45; }
+    .stat-tile::after {
+      content: ''; position: absolute; top: 0; right: 0;
+      width: 28px; height: 28px;
+      border-top: 1px solid var(--amber); border-right: 1px solid var(--amber);
+      opacity: 0.1; border-radius: 0 7px 0 0;
+    }
+    .st-key { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+    .st-num {
+      font-family: var(--font-display);
+      font-size: 2rem; line-height: 1; letter-spacing: 0.01em; color: var(--text-0);
+    }
+    .st-num sub { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-2); vertical-align: middle; }
+    .st-note { font-size: 0.72rem; color: var(--text-2); margin-top: 4px; }
+    .st-note.up { color: var(--green); }
+    .st-note.warn { color: var(--amber); }
+
+    /* -- PANEL ------------------------------------------- */
+    .panel {
+      background: var(--surface-1);
+      border: 1px solid var(--border-dim);
+      border-radius: 10px; overflow: hidden;
+    }
+    .panel-head {
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border-dim);
+      display: flex; align-items: center; gap: 9px;
+      background: var(--surface-0);
+    }
+    .panel-head h2 {
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-1);
+    }
+    .ph-count {
+      font-size: 0.7rem; color: var(--text-2);
+      background: var(--surface-2); border: 1px solid var(--border-dim);
+      padding: 1px 7px; border-radius: 2px;
+    }
+    .panel-head-icon { color: var(--amber); display: flex; }
+    .panel-head-right { margin-left: auto; display: flex; gap: 6px; }
+    .panel-body { padding: 20px; }
+
+    /* -- TABLE ------------------------------------------- */
+    .dt { width: 100%; border-collapse: collapse; }
+    .dt thead tr { border-bottom: 1px solid var(--border-dim); }
+    .dt th {
+      text-align: left; padding: 9px 15px;
+      font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-3); font-weight: 400;
+    }
+    .dt td {
+      padding: 10px 15px; font-size: 0.82rem; color: var(--text-1);
+      border-bottom: 1px solid var(--border-dim);
+    }
+    .dt tbody tr:last-child td { border-bottom: none; }
+    .dt tbody tr { transition: background 0.1s; }
+    .dt tbody tr:hover { background: var(--surface-2); }
+    .td-primary { color: var(--text-0); font-weight: 500; }
+    .td-muted { color: var(--text-2); font-size: 0.61rem; margin-top: 2px; }
+    .td-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    /* -- BADGES ------------------------------------------ */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 7px; border-radius: 2px;
+      font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .ba { background: var(--amber-mid); color: var(--amber); border: 1px solid rgba(59,130,246,0.22); }
+    .bg { background: rgba(46,216,138,0.09); color: var(--green); border: 1px solid rgba(46,216,138,0.22); }
+    .br { background: rgba(232,68,90,0.09); color: var(--red); border: 1px solid rgba(232,68,90,0.22); }
+    .bx { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border-dim); }
+
+    /* -- FORMS ------------------------------------------- */
+    .fg { margin-bottom: 16px; }
+    .fl {
+      display: block; font-size: 0.68rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-2); margin-bottom: 7px;
+    }
+    .fi {
+      width: 100%; background: var(--surface-0);
+      border: 1px solid var(--border); border-radius: 3px;
+      padding: 8px 12px; font-family: var(--font-mono);
+      font-size: 0.82rem; color: var(--text-0); outline: none;
+      transition: border-color 0.14s, box-shadow 0.14s;
+    }
+    .fi:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-lo); }
+    .fi::placeholder { color: var(--text-3); }
+    textarea.fi { resize: vertical; line-height: 1.65; }
+
+    /* -- DROP ZONE --------------------------------------- */
+    .dz {
+      border: 1px dashed var(--border); border-radius: 7px;
+      padding: 32px 18px; text-align: center; cursor: pointer;
+      transition: all 0.18s; background: var(--surface-0);
+      position: relative; overflow: hidden;
+    }
+    .dz::before, .dz::after {
+      content: ''; position: absolute;
+      width: 16px; height: 16px;
+      border-color: var(--amber); border-style: solid; opacity: 0.18;
+      transition: opacity 0.18s;
+    }
+    .dz::before { top: 7px; left: 7px; border-width: 1px 0 0 1px; }
+    .dz::after  { bottom: 7px; right: 7px; border-width: 0 1px 1px 0; }
+    .dz:hover, .dz.drag-over { border-color: var(--amber); background: var(--amber-lo); }
+    .dz:hover::before, .dz:hover::after,
+    .dz.drag-over::before, .dz.drag-over::after { opacity: 0.7; }
+    .dz input[type="file"] { display: none; }
+    .dz-icon {
+      width: 40px; height: 40px; margin: 0 auto 10px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 7px; display: flex; align-items: center; justify-content: center;
+      color: var(--amber);
+    }
+    .dz-title { font-size: 0.82rem; font-weight: 600; color: var(--text-1); margin-bottom: 3px; }
+    .dz-hint  { font-size: 0.72rem; color: var(--text-2); }
+    .dz-sel   { margin-top: 10px; font-size: 0.66rem; color: var(--amber); font-weight: 500; }
+
+    /* -- VERSION TIMELINE -------------------------------- */
+    .vt { position: relative; padding-left: 28px; }
+    .vt::before {
+      content: ''; position: absolute; left: 9px; top: 14px; bottom: 14px;
+      width: 1px;
+      background: linear-gradient(180deg, var(--amber) 0%, var(--border-dim) 100%);
+      opacity: 0.25;
+    }
+    .vt-item {
+      position: relative; margin-bottom: 10px;
+      background: var(--surface-1); border: 1px solid var(--border-dim);
+      border-radius: 7px; padding: 13px 16px;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .vt-item:hover { border-color: var(--border-hi); transform: translateX(3px); }
+    .vt-item.latest {
+      border-color: rgba(59,130,246,0.18);
+      background: linear-gradient(135deg, var(--amber-lo) 0%, var(--surface-1) 60%);
+    }
+    .vt-item::before {
+      content: ''; position: absolute; left: -22px; top: 17px;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--border-hi); border: 2px solid var(--surface-0);
+    }
+    .vt-item.latest::before { background: var(--amber); box-shadow: 0 0 7px var(--amber-glow); }
+    .vt-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 7px; }
+    .vt-ver {
+      font-family: var(--font-display);
+      font-size: 1.15rem; letter-spacing: 0.05em; color: var(--text-0); line-height: 1;
+    }
+    .vt-date { font-size: 1.18rem; color: var(--text-2); margin-left: auto; }
+    .vt-comment {
+      font-size: 1.08rem; color: var(--text-1);
+      padding: 6px 10px; background: var(--surface-0);
+      border-left: 2px solid var(--amber); border-radius: 0 3px 3px 0;
+      margin-bottom: 9px; line-height: 1.6;
+    }
+    .vt-actions { display: flex; gap: 6px; }
+
+    /* -- EMPTY STATE ------------------------------------- */
+    .empty { padding: 60px 20px; text-align: center; }
+    .empty-ico {
+      width: 52px; height: 52px; margin: 0 auto 14px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      color: var(--text-3);
+    }
+    .empty h3 {
+      font-family: var(--font-display); font-size: 1.35rem;
+      letter-spacing: 0.06em; color: var(--text-2); margin-bottom: 6px;
+    }
+    .empty p { font-size: 0.66rem; color: var(--text-3); margin-bottom: 18px; }
+
+    /* -- INFO TILE --------------------------------------- */
+    .info-tile {
+      background: var(--surface-1); border: 1px solid var(--border-dim);
+      border-radius: 7px; padding: 15px; margin-bottom: 10px;
+    }
+    .it-label { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+    .it-body { font-size: 1.08rem; color: var(--text-1); line-height: 1.8; }
+    .feat-row {
+      display: flex; align-items: center; gap: 9px;
+      padding: 6px 0; border-bottom: 1px solid var(--border-dim);
+      font-size: 0.66rem; color: var(--text-1);
+    }
+    .feat-row:last-child { border-bottom: none; }
+    .feat-icon {
+      width: 22px; height: 22px; border-radius: 3px;
+      background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+      font-size: 1.12rem; flex-shrink: 0;
+    }
+
+    /* -- FILE HEADER CHIP -------------------------------- */
+    .file-chip {
+      width: 46px; height: 46px; border-radius: 9px;
+      background: var(--amber-mid); border: 1px solid rgba(59,130,246,0.18);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--amber); flex-shrink: 0;
+    }
+
+    /* -- SCROLLBAR --------------------------------------- */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* -- ANIMATIONS -------------------------------------- */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .anim  { animation: fadeUp 0.28s ease forwards; }
+    .d1 { animation-delay: 0.04s; opacity: 0; }
+    .d2 { animation-delay: 0.09s; opacity: 0; }
+    .d3 { animation-delay: 0.14s; opacity: 0; }
+    .d4 { animation-delay: 0.19s; opacity: 0; }
+
+    /* -- RESPONSIVE -------------------------------------- */
+    @media (max-width: 800px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- === SIDEBAR ========================================== -->
+<aside class="sidebar">
+  <div class="sidebar-glow"></div>
+
+  <div class="logo-wrap">
+    <div class="logo-name">Build<span>Smart</span></div>
+    <div class="logo-tag">File Versioning System</div>
+  </div>
+
+  <div class="sys-bar">
+    <span class="sys-dot"></span>
+    NODE_01 &#183; SQLITE &#183; READY
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Workspace</div>
+    <a href="{{ url_for('document.home') }}"
+       class="nav-link {% if request.endpoint == 'document.home' %}active{% endif %}">
+      <span class="nav-icon">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </span>
+      Upload File
+    </a>
+    <a href="{{ url_for('document.repository') }}"
+       class="nav-link {% if request.endpoint == 'document.repository' %}active{% endif %}">
+      <span class="nav-icon">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+      </span>
+      All Files
+      {% if file_count is defined and file_count %}
+        <span class="nav-badge">{{ file_count }}</span>
+      {% endif %}
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">System</div>
+    <a href="#" class="nav-link">
+      <span class="nav-icon">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </span>
+      Activity
+    </a>
+    <a href="#" class="nav-link">
+      <span class="nav-icon">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+        </svg>
+      </span>
+      Settings
+    </a>
+  </div>
+
+  <div class="sidebar-foot">
+    <div class="foot-row"><span>Engine</span><span>Flask 3.x</span></div>
+    <div class="foot-row"><span>DB</span><span>SQLite + FS</span></div>
+    <div class="foot-copy">BUILDSMART &#183; v1.0.0 &#183; MIT LICENSE</div>
+  </div>
+</aside>
+
+<!-- === MAIN ============================================== -->
+<div class="main">
+
+  <header class="topbar">
+    <div class="breadcrumb">
+      <span>BuildSmart</span>
+      <span class="sep">&#8250;</span>
+      <span class="bc-cur">{% block breadcrumb %}Home{% endblock %}</span>
+    </div>
+    <div class="topbar-right">
+      {% block topbar_right %}
+      <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border-dim);border-radius:3px;font-size:0.58rem;color:var(--text-2);background:var(--surface-1);">
+        <span style="width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);"></span>
+        SYSTEM READY
+      </div>
+      <a href="{{ url_for('document.home') }}" class="btn btn-amber">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Upload
+      </a>
+      {% endblock %}
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-zone">
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          {% if cat == 'success' %}<polyline points="20 6 9 17 4 12"/>
+          {% else %}<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>{% endif %}
+        </svg>
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <main class="page">{% block content %}{% endblock %}</main>
+</div>
+
+<script>
+document.querySelectorAll('.dz').forEach(z => {
+  const inp = z.querySelector('input[type="file"]');
+  z.addEventListener('click', () => inp?.click());
+  z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag-over'); });
+  z.addEventListener('dragleave', () => z.classList.remove('drag-over'));
+  z.addEventListener('drop', e => {
+    e.preventDefault(); z.classList.remove('drag-over');
+    if (inp && e.dataTransfer.files.length) {
+      const dt = new DataTransfer(); dt.items.add(e.dataTransfer.files[0]);
+      inp.files = dt.files;
+      const s = z.querySelector('.dz-sel');
+      if (s) s.textContent = '&#9656; ' + e.dataTransfer.files[0].name;
+    }
+  });
+  inp?.addEventListener('change', () => {
+    const s = z.querySelector('.dz-sel');
+    if (s && inp.files.length) s.textContent = '&#9656; ' + inp.files[0].name;
+  });
+});
+</script>
+</body>
+</html>

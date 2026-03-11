@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Repository - BuildSmart{% endblock %}
+{% block breadcrumb %}Document Repository{% endblock %}
+
+{% block content %}
+
+<div class="ph-row anim" style="margin-bottom:22px;">
+  <div>
+    <div class="ph-eye">// DOCUMENT VAULT</div>
+    <div class="ph-title">Repository</div>
+    <div class="ph-sub">All tracked documents and their version history.</div>
+  </div>
+  <a href="{{ url_for('document.home') }}" class="btn bta">
+    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Upload New Document
+  </a>
+</div>
+
+<div class="stat-row anim d1">
+  <div class="stat-tile">
+    <div class="st-k">Total Documents</div>
+    <div class="st-n">{{ documents|length }}<sub> docs</sub></div>
+    <div class="st-note up">all tracked</div>
+  </div>
+  <div class="stat-tile">
+    <div class="st-k">Latest Upload</div>
+    <div class="st-n" style="font-size:1rem;padding-top:6px;word-break:break-all;">
+      {% if documents %}{{ documents[-1].title[:20] }}{% else %}none{% endif %}
+    </div>
+    <div class="st-note wa">most recent</div>
+  </div>
+  <div class="stat-tile">
+    <div class="st-k">Activity Logs</div>
+    <div class="st-n" style="font-size:1.6rem;padding-top:4px;">
+      <a href="{{ url_for('document.logs') }}" style="color:var(--amber);text-decoration:none;">View</a>
+    </div>
+    <div class="st-note">full audit trail</div>
+  </div>
+</div>
+
+<div class="panel anim d2">
+  <div class="panel-head">
+    <span class="ph-ico">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      </svg>
+    </span>
+    <h2>Document Vault</h2>
+    <span class="ph-cnt">{{ documents|length }} records</span>
+  </div>
+
+  {% if documents %}
+  <table class="dt">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Version</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for doc in documents %}
+      <tr>
+        <td style="color:var(--text-2);">{{ doc.id }}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:30px;height:30px;border-radius:5px;background:var(--amber-mid);
+                        border:1px solid rgba(59,130,246,0.18);display:flex;align-items:center;
+                        justify-content:center;color:var(--amber);flex-shrink:0;">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                <polyline points="13 2 13 9 20 9"/>
+              </svg>
+            </div>
+            <div class="tdp">{{ doc.title }}</div>
+          </div>
+        </td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);">
+          {{ doc.description or 'N/A' }}
+        </td>
+        <td><span class="bdg ba">v{{ doc.current_version }}</span></td>
+        <td>
+          <div class="tda">
+            <a href="{{ url_for('document.view_versions', document_id=doc.id) }}" class="btn btg btn-sm">
+              View Versions
+            </a>
+            <a href="{{ url_for('document.view_versions', document_id=doc.id) }}" class="btn bta btn-sm">
+              New Version
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% else %}
+  <div class="empty">
+    <div class="empty-ico">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      </svg>
+    </div>
+    <h3>No Documents Yet</h3>
+    <p>Upload your first document to begin.</p>
+    <a href="{{ url_for('document.home') }}" class="btn bta">Upload First Document</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+<html><head></head><body>{% extends "base.html" %}
+{% block title %}Upload Document{% endblock %}
+{% block breadcrumb %}Upload Document{% endblock %}
+
+{% block topbar_right %}
+<a href="{{ url_for('document.repository') }}" class="btn bto">
+  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+  Repository
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="ph anim">
+  <div class="ph-eye">// NEW DOCUMENT ENTRY</div>
+  <div class="ph-title">Upload Document</div>
+  <div class="ph-sub">Add a new document to the vault. Version 1 is created automatically.</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;">
+
+  <!-- Form panel -->
+  <div class="panel anim d1">
+    <div class="panel-head">
+      <span class="ph-ico">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+      </span>
+      <h2>New Document Record</h2>
+    </div>
+    <div class="panel-body">
+      <form action="{{ url_for('document.upload_document') }}" method="POST" enctype="multipart/form-data">
+
+        <div class="fg">
+          <label class="fl">Document Title</label>
+          <input class="fi" type="text" name="title" placeholder="e.g. Structural Blueprint v1" required="">
+        </div>
+
+        <div class="fg">
+          <label class="fl">Description <span style="color:var(--text-3);font-size:0.5rem;letter-spacing:0.1em;">OPTIONAL</span></label>
+          <textarea class="fi" name="description" rows="3" placeholder="Brief notes about this document…"></textarea>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Select File</label>
+          <label class="dz" onclick="event.stopPropagation()">
+            <div class="dz-icon">
+              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <div class="dz-title">Drop file here or click to browse</div>
+            <div class="dz-hint">Any type · Max 50 MB</div>
+            <div class="dz-sel"></div>
+            <input type="file" name="file" required="">
+          </label>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;">
+          <a href="{{ url_for('document.repository') }}" class="btn btg">Cancel</a>
+          <button type="submit" class="btn bta">
+            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            Commit Upload
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Info panel -->
+  <div class="anim d2">
+    <div class="info-tile">
+      <div class="it-l">How Versioning Works</div>
+      <div class="it-b">
+        This upload creates <strong style="color:var(--text-0)">Version 1</strong> of a new document.
+        Use <em style="color:var(--amber);font-style:normal">Upload New Version</em> on any existing
+        document to track revisions while preserving full history.
+      </div>
+    </div>
+    <div class="info-tile">
+      <div class="it-l">Capabilities</div>
+      {% for ico, label in [('📁','Upload any file type'),('🔁','Version any document anytime'),('⬇️','Download any past version'),('📋','Full activity log trail')] %}
+      <div class="feat">
+        <span class="fi2">{{ ico }}</span>{{ label }}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="info-tile" style="background:var(--amber-lo);border-color:rgba(59,130,246,0.14);">
+      <div class="it-l" style="color:var(--amber);">Storage Path</div>
+      <div class="it-b">Files stored under <code style="color:var(--amber);font-size:0.63rem;">uploads/</code> and versioned automatically.</div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+</body></html>
