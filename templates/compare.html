@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Version Analysis — BuildSmart{% endblock %}
+{% block page_class %}page-vault{% endblock %}
+{% block breadcrumb %}Version Comparison{% endblock %}
+
+{% block extra_css %}
+<style>
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+  .compare-panel {
+    background: var(--bg-1); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    position: relative;
+  }
+  .compare-panel.v1 { border-top: 2px solid var(--text-2); }
+  .compare-panel.v2 { border-top: 2px solid var(--accent); }
+  .compare-panel-head { padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .compare-tag { font-family: var(--font-mono); font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+  .compare-tag.old { color: var(--text-2); }
+  .compare-tag.new { color: var(--accent); }
+  .compare-date { font-size: 11px; color: var(--text-2); }
+  
+  .compare-meta { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .meta-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .meta-key { color: var(--text-2); }
+  .meta-val { font-weight: 500; font-family: var(--font-mono); font-size: 11px; }
+  
+  .delta-section { margin-top: 24px; }
+  .delta-card { background: var(--bg-1); border: 1px solid var(--accent-border); border-radius: var(--radius); padding: 22px; }
+  .delta-title { font-size: 13px; font-weight: 600; margin-bottom: 14px; color: var(--accent); }
+  .delta-list { display: flex; flex-direction: column; gap: 8px; }
+  .delta-item { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .delta-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; }
+  .delta-icon.up { background: var(--green-soft); color: var(--green); }
+  .delta-icon.down { background: var(--red-soft); color: var(--red); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">Document Vault</div>
+    <h1 class="page-title">Version Analysis</h1>
+    <p class="page-subtitle">Side-by-side comparison of two committed document revisions.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="javascript:history.back()" class="btn-ghost">← Back</a>
+  </div>
+</div>
+
+<div class="compare-grid">
+  <!-- v1 panel -->
+  <div class="compare-panel v1">
+    <div class="compare-panel-head">
+      <div class="compare-tag old">VERSION_{{ v1.version_number }} · PREVIOUS</div>
+      <div class="compare-date">{{ v1.uploaded_at.strftime('%b %d, %Y · %H:%M UTC') }}</div>
+    </div>
+    <div class="compare-meta">
+      <div class="meta-row"><span class="meta-key">Version</span><span class="meta-val">v{{ v1.version_number }}</span></div>
+      <div class="meta-row"><span class="meta-key">Uploaded by</span><span class="meta-val">{{ v1.uploaded_by }}</span></div>
+      <div class="meta-row"><span class="meta-key">File path</span><span class="meta-val" style="font-size:10px;">{{ v1.file_path }}</span></div>
+      <div class="meta-row"><span class="meta-key">Document ID</span><span class="meta-val">BS-{{ v1.document_id }}</span></div>
+    </div>
+  </div>
+
+  <!-- v2 panel -->
+  <div class="compare-panel v2">
+    <div class="compare-panel-head">
+      <div class="compare-tag new">VERSION_{{ v2.version_number }} · CURRENT</div>
+      <div class="compare-date">{{ v2.uploaded_at.strftime('%b %d, %Y · %H:%M UTC') }}</div>
+    </div>
+    <div class="compare-meta">
+      <div class="meta-row"><span class="meta-key">Version</span><span class="meta-val">v{{ v2.version_number }}</span></div>
+      <div class="meta-row"><span class="meta-key">Uploaded by</span><span class="meta-val">{{ v2.uploaded_by }}</span></div>
+      <div class="meta-row"><span class="meta-key">File path</span><span class="meta-val" style="font-size:10px;">{{ v2.file_path }}</span></div>
+      <div class="meta-row"><span class="meta-key">Document ID</span><span class="meta-val">BS-{{ v2.document_id }}</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="delta-section">
+  <div class="delta-card">
+    <div class="delta-title">Detected Changes (v{{ v1.version_number }} → v{{ v2.version_number }})</div>
+    <div class="delta-list">
+      <div class="delta-item">
+        <div class="delta-icon up">↑</div>
+        <span>Version number incremented from <strong>{{ v1.version_number }}</strong> to <strong>{{ v2.version_number }}</strong></span>
+      </div>
+      <div class="delta-item">
+        <div class="delta-icon up">✓</div>
+        <span>New revision committed by <strong>{{ v2.uploaded_by }}</strong> on {{ v2.uploaded_at.strftime('%b %d, %Y') }}</span>
+      </div>
+      {% if v1.file_path != v2.file_path %}
+      <div class="delta-item">
+        <div class="delta-icon up">↑</div>
+        <span>File replaced: <code style="font-family:var(--font-mono); font-size:10px; color:var(--accent);">{{ v2.file_path }}</code></span>
+      </div>
+      {% endif %}
+      {% if v1.uploaded_by != v2.uploaded_by %}
+      <div class="delta-item">
+        <div class="delta-icon down">!</div>
+        <span>Author changed from <strong>{{ v1.uploaded_by }}</strong> to <strong>{{ v2.uploaded_by }}</strong></span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

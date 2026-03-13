@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — BuildSmart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-0: #050505;
+      --bg-1: #080808;
+      --bg-2: #0f0f0f;
+      --border: rgba(255,255,255,0.06);
+      --border-bright: rgba(255,255,255,0.12);
+      --accent: #2979FF;
+      --accent-dim: rgba(41,121,255,0.12);
+      --accent-glow: rgba(41,121,255,0.35);
+      --accent-subtle: rgba(41,121,255,0.06);
+      --text-primary: #f0f0f0;
+      --text-secondary: #888;
+      --text-tertiary: #444;
+    }
+
+    body {
+      background: var(--bg-0);
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* Cinematic Left Panel */
+    .brand-side {
+      background: linear-gradient(160deg, #0a0a0a 0%, #050505 60%);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-side::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+      top: -150px; left: -150px;
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 10;
+      text-decoration: none;
+    }
+
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .logo-mark svg { width: 16px; height: 16px; fill: none; stroke: #000; stroke-width: 2.5; stroke-linecap: round; }
+
+    .logo-text { font-size: 18px; font-weight: 500; color: #fff; letter-spacing: -0.4px; }
+    .logo-text span { color: var(--accent); }
+
+    .hero-content { position: relative; z-index: 10; }
+    .hero-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+    .hero-title { font-family: 'Cormorant Garamond', serif; font-size: 48px; font-weight: 300; line-height: 1.0; letter-spacing: -2px; margin-bottom: 24px; }
+    .hero-title strong { font-weight: 400; font-style: italic; }
+    .hero-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; max-width: 380px; }
+
+    .brand-features { display: flex; flex-direction: column; gap: 16px; position: relative; z-index: 10; }
+    .feat-item { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-secondary); }
+    .feat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+
+    /* Form Side */
+    .form-side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      background: var(--bg-0);
+    }
+
+    .auth-card { width: 100%; max-width: 360px; }
+    .auth-header { margin-bottom: 32px; }
+    .auth-title { font-size: 24px; font-weight: 500; letter-spacing: -0.8px; margin-bottom: 8px; }
+    .auth-subtitle { font-size: 14px; color: var(--text-secondary); }
+
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-tertiary); margin-bottom: 8px; }
+    .form-input { 
+      width: 100%; background: var(--bg-1); border: 1px solid var(--border); 
+      border-radius: 10px; padding: 12px 16px; color: #fff; 
+      font-family: inherit; font-size: 14px; transition: all 0.2s; 
+    }
+    .form-input:focus { outline: none; border-color: var(--accent); background: var(--bg-2); box-shadow: 0 0 0 4px var(--accent-subtle); }
+    .form-input::placeholder { color: #444; }
+
+    .btn-submit {
+      width: 100%; background: var(--accent); color: #000; 
+      border: none; border-radius: 10px; padding: 13px; 
+      font-family: inherit; font-size: 14px; font-weight: 600; 
+      cursor: pointer; margin-top: 10px; transition: all 0.3s;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .btn-submit:hover { transform: translateY(-1px); filter: brightness(1.1); box-shadow: 0 0 28px var(--accent-glow); }
+
+    .auth-footer { text-align: center; margin-top: 28px; font-size: 13px; color: var(--text-secondary); }
+    .auth-footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .auth-footer a:hover { text-underline-offset: 4px; text-decoration: underline; }
+
+    /* Flash Messages */
+    .flash-list { margin-bottom: 24px; }
+    .flash { padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; margin-bottom: 10px; animation: slideUp 0.3s ease; }
+    .flash-error { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .flash-success { background: rgba(57, 255, 130, 0.1); color: #39FF82; border: 1px solid rgba(57, 255, 130, 0.2); }
+
+    @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    @media (max-width: 1000px) {
+      body { grid-template-columns: 1fr; }
+      .brand-side { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="brand-side">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 14 14"><path d="M2 12 L7 2 L12 12 M4 8.5 H10"/></svg>
+      </div>
+      <span class="logo-text">Build<span>Smart</span></span>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-eyebrow">Identity Engine</div>
+      <h1 class="hero-title">Industry Standard<br><strong>Control</strong> Reinvented.</h1>
+      <p class="hero-desc">The secure gateway to BuildSmart’s construction document compliance and stakeholder accountability ecosystem.</p>
+    </div>
+
+    <div class="brand-features">
+      <div class="feat-item"><div class="feat-dot"></div> Immutable Audit Traceability</div>
+      <div class="feat-item"><div class="feat-dot"></div> Role-Based Access Governance</div>
+      <div class="feat-item"><div class="feat-dot"></div> Encrypted Document Sovereignty</div>
+    </div>
+  </div>
+
+  <div class="form-side">
+    <div class="auth-card">
+      <header class="auth-header">
+        <h2 class="auth-title">Sign In</h2>
+        <p class="auth-subtitle">Welcome back to the Operations Center</p>
+      </header>
+
+      <div class="flash-list">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      <form method="POST" action="{{ url_for('auth.login') }}">
+        <div class="form-group">
+          <label class="form-label">Professional Email</label>
+          <input type="email" name="email" class="form-input" required placeholder="name@company.com">
+        </div>
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+             <label class="form-label">Security Password</label>
+          </div>
+          <input type="password" name="password" class="form-input" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn-submit">Authenticate Identity</button>
+      </form>
+
+      <footer class="auth-footer">
+        Unidentified user? <a href="{{ url_for('auth.register') }}">Create an account</a>
+      </footer>
+    </div>
+  </div>
+
+</body>
+</html>

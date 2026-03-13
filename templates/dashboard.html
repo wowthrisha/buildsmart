@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Operations Center — BuildSmart{% endblock %}
+{% block page_class %}page-dashboard{% endblock %}
+{% block breadcrumb %}Operations Center{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Stats Grid */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  @media(max-width:1024px){ .stats-row { grid-template-columns: 1fr 1fr; } }
+  @media(max-width:600px){ .stats-row { grid-template-columns: 1fr; } }
+
+  .stat-card {
+    background: var(--bg-1); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px 22px;
+    position: relative; overflow: hidden;
+    transition: all 0.2s;
+  }
+  .stat-card:hover { border-color: var(--border-bright); transform: translateY(-1px); }
+  .stat-card.highlight { border-color: var(--accent-dim); background: var(--accent-subtle); }
+  .stat-card.highlight::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: var(--accent); box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  .stat-label { 
+    font-size: 11px; font-weight: 500; color: var(--text-secondary); 
+    letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px; 
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .stat-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+  
+  .stat-value { font-size: 32px; font-weight: 300; color: var(--text-primary); font-family: 'DM Mono', monospace; line-height: 1; }
+  .stat-status { font-size: 11px; margin-top: 10px; display: flex; align-items: center; gap: 6px; }
+  .stat-status.success { color: #39FF82; }
+  .stat-status.warning { color: #FF6B1A; }
+
+  /* Panels Grid */
+  .content-layout { display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
+  @media(max-width:1100px){ .content-layout { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .panel-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+  .panel-action { font-size: 12px; color: var(--accent); text-decoration: none; transition: opacity 0.2s; }
+  .panel-action:hover { opacity: 0.7; }
+
+  /* Document List */
+  .doc-list { display: flex; flex-direction: column; }
+  .doc-item {
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px 24px; border-bottom: 1px solid var(--border);
+    text-decoration: none; color: inherit; transition: all 0.2s;
+  }
+  .doc-item:last-child { border-bottom: none; }
+  .doc-item:hover { background: var(--bg-2); }
+
+  .doc-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--accent-dim); display: grid; place-items: center; flex-shrink: 0;
+  }
+  .doc-icon svg { width: 16px; height: 16px; stroke: var(--accent); stroke-width: 1.8; fill: none; }
+
+  .doc-body { flex: 1; min-width: 0; }
+  .doc-name { font-size: 13.5px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .doc-meta { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* Feed Item */
+  .feed-item { display: flex; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--border); }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-avatar { 
+    width: 28px; height: 28px; border-radius: 50%; 
+    background: var(--bg-3); border: 1px solid var(--border-bright); 
+    display: grid; place-items: center; font-size: 11px; font-weight: 600; color: var(--accent);
+    flex-shrink: 0;
+  }
+  .feed-body { flex: 1; }
+  .feed-text { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .feed-text strong { font-weight: 500; }
+  .feed-time { font-size: 10.5px; color: var(--text-tertiary); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  /* Buttons */
+  .btn-primary {
+    background: var(--accent); color: #000; border: none; padding: 10px 18px;
+    border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; transition: all 0.3s;
+    box-shadow: 0 0 16px var(--accent-glow);
+  }
+  .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.1); box-shadow: 0 0 24px var(--accent-glow); }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    display: none; place-items: center; z-index: 5000;
+    backdrop-filter: blur(8px); padding: 20px;
+  }
+  .modal-backdrop.active { display: grid; }
+  .modal-content {
+    background: var(--bg-1); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 32px; width: 100%; max-width: 480px;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.5);
+    animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  
+  .modal-header { margin-bottom: 24px; }
+  .modal-title { font-size: 20px; font-weight: 500; letter-spacing: -0.5px; font-family: 'Cormorant Garamond', serif; }
+  
+  .btn-submit {
+    width: 100%; padding: 12px; background: var(--accent); border: none; border-radius: 10px;
+    color: #000; font-size: 14px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 0 20px var(--accent-glow); transition: all 0.2s;
+  }
+  .btn-submit:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+  .badge { font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .badge-warning { background: var(--accent-dim); color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">Submission Validation</div>
+    <h1 class="page-title">Operations Center</h1>
+    <p class="page-subtitle">Real-time oversight of construction document flow, compliance status, and stakeholder activity.</p>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn-primary" onclick="openGlobalUpload()">
+      <svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2.5;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Submission
+    </button>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="stats-row">
+  <div class="stat-card highlight">
+    <div class="stat-label">Active Submissions <span class="stat-dot"></span></div>
+    <div class="stat-value">{{ active_submissions }}</div>
+    <div class="stat-status success">○ +4 this week</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Pending Approval</div>
+    <div class="stat-value">{{ pending_approvals }}</div>
+    <div class="stat-status warning">△ 2 overdue</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg. Cycle Time</div>
+    <div class="stat-value">6.2d</div>
+    <div class="stat-status success">● -1.4d vs last month</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Approval Rate</div>
+    <div class="stat-value">87%</div>
+    <div class="stat-status success">● +3% vs last month</div>
+  </div>
+</div>
+
+<div class="content-layout">
+
+  <!-- Main Pipeline Section -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    
+    <!-- Active Pipeline -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Active Approval Pipeline</h2>
+        <a href="#" class="panel-action">View all →</a>
+      </div>
+      <div style="padding: 24px;">
+        <div style="color: var(--text-tertiary); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;">Tower Complex A — Permit Package v3.1</div>
+        
+        <div style="display: flex; flex-direction: column; gap: 32px; position: relative; padding-left: 20px;">
+          <div style="position: absolute; left: 6px; top: 10px; bottom: 10px; width: 1px; background: rgba(255,255,255,0.1);"></div>
+          
+          <!-- Step 1 -->
+          <div style="position: relative;">
+            <div style="position: absolute; left: -21px; top: 0; width: 15px; height: 15px; border-radius: 50%; background: #39FF82; display: grid; place-items: center; box-shadow: 0 0 10px rgba(57,255,130,0.3);">
+              <svg viewBox="0 0 24 24" width="10" height="10" style="stroke:#000;fill:none;stroke-width:4;"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="font-size: 13px; font-weight: 500; color: #fff;">Document Upload & Pre-check <span class="badge" style="background:rgba(57,255,130,0.1); color:#39FF82; margin-left:8px;">DONE</span></div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Completed Mar 1 · All 14 documents validated</div>
+          </div>
+
+          <!-- Step 2 -->
+          <div style="position: relative;">
+            <div style="position: absolute; left: -21px; top: 0; width: 15px; height: 15px; border-radius: 50%; background: #39FF82; display: grid; place-items: center; box-shadow: 0 0 10px rgba(57,255,130,0.3);">
+              <svg viewBox="0 0 24 24" width="10" height="10" style="stroke:#000;fill:none;stroke-width:4;"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="font-size: 13px; font-weight: 500; color: #fff;">Internal Review <span class="badge" style="background:rgba(57,255,130,0.1); color:#39FF82; margin-left:8px;">DONE</span></div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Completed Mar 3 · 2 comments resolved</div>
+          </div>
+
+          <!-- Step 3 -->
+          <div style="position: relative;">
+            <div style="position: absolute; left: -24px; top: -3px; width: 22px; height: 22px; border-radius: 50%; border: 4px solid var(--bg-1); background: #39FF82; box-shadow: 0 0 15px rgba(57,255,130,0.5);"></div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="font-size: 13px; font-weight: 500; color: #fff;">Authority Submission <span class="badge" style="background:rgba(57,255,130,0.1); color:#39FF82; margin-left:8px;">IN REVIEW</span></div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Since Mar 5 · Est. completion Mar 10</div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Documents List -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Submission Documents</h2>
+        <a href="{{ url_for('document.repository') }}" class="panel-action">Upload +</a>
+      </div>
+      <div class="doc-list">
+        {% for doc in documents %}
+        <a href="{{ url_for('document.view_versions', document_id=doc.id) }}" class="doc-item">
+          <div class="doc-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="doc-body">
+            <div class="doc-name">{{ doc.title }}</div>
+            <div class="doc-meta">v{{ doc.current_version }} · {{ doc.created_by }} · {{ doc.created_at.strftime('%b %d') }}</div>
+          </div>
+          {% if doc.current_version == 1 %}
+          <span class="badge" style="background:rgba(41,121,255,0.1); color:#2979FF;">In Review</span>
+          {% else %}
+          <span class="badge" style="background:rgba(57,255,130,0.1); color:#39FF82;">Approved</span>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <!-- Sidebar Column -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    
+    <!-- Active Projects -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Active Projects</h2>
+        <a href="#" class="panel-action">All →</a>
+      </div>
+      <div style="padding: 16px 24px;">
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 12px; font-weight: 500; color: #fff;">Tower Complex A</span>
+            <span style="font-size: 10px; color: #39FF82;">74%</span>
+          </div>
+          <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px;">
+            <div style="width: 74%; height: 100%; background: #39FF82; border-radius: 2px;"></div>
+          </div>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 12px; font-weight: 500; color: #fff;">Riverside Office Park</span>
+            <span style="font-size: 10px; color: #39FF82;">41%</span>
+          </div>
+          <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px;">
+            <div style="width: 41%; height: 100%; background: #39FF82; border-radius: 2px;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Activity Feed -->
+    <aside class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Recent Activity</h2>
+      </div>
+      <div class="feed-list">
+        {% for log in logs %}
+        <div class="feed-item">
+          <div class="feed-avatar">{{ log.performed_by[0]|upper }}</div>
+          <div class="feed-body">
+            <div class="feed-text"><strong>{{ log.performed_by }}</strong> {{ log.action }}</div>
+            <div class="feed-time">{{ log.timestamp.strftime('%H:%M') }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </aside>
+
+  </div>
+
+</div>
+{% endblock %}

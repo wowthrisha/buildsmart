@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Identity Profile — BuildSmart{% endblock %}
+{% block page_class %}page-profile{% endblock %}
+{% block breadcrumb %}Identity Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+  .profile-layout { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
+
+  .profile-card {
+    background: var(--bg-1); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 40px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .profile-card::before { 
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 100px; 
+    background: linear-gradient(180deg, var(--accent-subtle), transparent); 
+  }
+
+  .profile-avatar {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #000);
+    display: grid; place-items: center;
+    font-size: 36px; font-weight: 600; color: #fff;
+    box-shadow: 0 0 30px var(--accent-glow);
+    position: relative; z-index: 1; margin-bottom: 20px; 
+    border: 2px solid var(--border-bright);
+  }
+  .profile-name { font-size: 20px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
+  .profile-email { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
+
+  .role-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 18px; border-radius: 24px;
+    background: var(--accent-dim); border: 1px solid var(--accent);
+    font-size: 11px; font-weight: 600; color: var(--accent);
+    letter-spacing: 0.8px; text-transform: uppercase;
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  .role-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+
+  .info-group { margin-top: 32px; width: 100%; border-top: 1px solid var(--border); padding-top: 10px; }
+  .info-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-key { color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .info-val { color: var(--text-primary); font-weight: 500; font-family: 'DM Mono', monospace; }
+
+  /* Access Cards */
+  .detail-grid { display: grid; gap: 24px; }
+  .panel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); }
+  .panel-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 14px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.2px; }
+  
+  .badge { font-size: 10px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: 1px; text-transform: uppercase; }
+  .badge-active { background: rgba(57,255,130,0.1); color: #39FF82; border: 1px solid rgba(57,255,130,0.2); }
+  .badge-warning { background: rgba(255,107,26,0.1); color: #FF6B1A; border: 1px solid rgba(255,107,26,0.2); }
+  .badge-neutral { background: var(--bg-3); color: var(--text-secondary); }
+
+  .btn-danger {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 10px;
+    background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2);
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.2); transform: translateY(-1px); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">User Sovereignty</div>
+    <h1 class="page-title">Identity Profile</h1>
+    <p class="page-subtitle">Your unique professional signature, assigned governance role, and system permissions.</p>
+  </div>
+</div>
+
+<div class="profile-layout">
+  <!-- Profile Summary -->
+  <aside class="profile-card">
+    <div class="profile-avatar">{{ user.username[0]|upper }}</div>
+    <div class="profile-name">{{ user.username }}</div>
+    <div class="profile-email">{{ user.email }}</div>
+    <div class="role-pill">
+      <span class="role-dot"></span>
+      {{ user.role }}
+    </div>
+
+    <div class="info-group">
+      <div class="info-row">
+        <span class="info-key">Identity ID</span>
+        <span class="info-val">#BS-{{ user.id }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Protocol</span>
+        <span class="info-val">JWT SECURED</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Permissions & Access -->
+  <div class="detail-grid">
+    <section class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Governance Privileges</span>
+        <span class="badge badge-active">Session Active</span>
+      </div>
+      <div style="padding: 12px 24px 24px;">
+        <div class="info-row">
+          <span class="info-key">Document Repository</span>
+          <span class="badge badge-active">FULL WRITE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Audit Visibility</span>
+          {% if user.role in ['Architect', 'Authority'] %}
+          <span class="badge badge-active">UNRESTRICTED</span>
+          {% else %}
+          <span class="badge badge-warning">SCOPED ACCESS</span>
+          {% endif %}
+        </div>
+        <div class="info-row">
+          <span class="info-key">Versioning Engine</span>
+          <span class="badge badge-active">ENABLED</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Policy Compliance</span>
+          {% if user.role == 'Authority' %}
+          <span class="badge badge-active">VERIFIED</span>
+          {% else %}
+          <span class="badge badge-neutral">STANDARD</span>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <div style="text-align: right;">
+      <a href="{{ url_for('auth.logout') }}" class="btn-danger">
+        <svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Terminate Session
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

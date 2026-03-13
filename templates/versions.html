@@ -1,139 +1,161 @@
-<html><head></head><body>{% extends "base.html" %}
-{% block title %}Versions · BuildSmart{% endblock %}
-{% block breadcrumb %}Document Versions{% endblock %}
+{% extends "base.html" %}
 
-{% block topbar_right %}
-<a href="{{ url_for('document.repository') }}" class="btn bto">
-  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-    <polyline points="15 18 9 12 15 6"></polyline>
-  </svg>
-  Repository
-</a>
+{% block title %}Revision History — BuildSmart{% endblock %}
+{% block page_class %}page-vault{% endblock %}
+{% block breadcrumb %}Revision Trace{% endblock %}
+
+{% block extra_css %}
+<style>
+  .version-header { 
+    background: var(--bg-1); border: 1px solid var(--border); 
+    border-radius: var(--radius); padding: 32px; margin-bottom: 24px;
+    display: flex; align-items: flex-start; gap: 24px;
+  }
+  .asset-icon {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: var(--accent-dim); display: grid; place-items: center; flex-shrink: 0;
+  }
+  .asset-icon svg { width: 32px; height: 32px; stroke: var(--accent); stroke-width: 1.2; fill: none; }
+  
+  .asset-body { flex: 1; }
+  .asset-title { font-size: 22px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.5px; }
+  .asset-meta { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .asset-meta strong { color: var(--text-primary); font-weight: 500; }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before { 
+    content: ''; position: absolute; left: 11px; top: 0; bottom: 0; 
+    width: 1px; background: var(--border-bright); 
+  }
+
+  .timeline-item { position: relative; margin-bottom: 32px; }
+  .timeline-dot { 
+    position: absolute; left: -32px; top: 6px; 
+    width: 23px; height: 23px; border-radius: 50%; 
+    background: var(--bg-1); border: 2px solid var(--accent); 
+    display: grid; place-items: center; z-index: 10;
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  .timeline-dot::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+  .version-card { 
+    background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); 
+    padding: 24px; transition: all 0.2s;
+  }
+  .version-card:hover { border-color: var(--border-bright); transform: translateX(4px); }
+  .version-card.latest { border-color: var(--accent-dim); background: var(--accent-subtle); }
+
+  .v-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .v-number { font-size: 16px; font-weight: 600; color: var(--accent); font-family: 'DM Mono', monospace; }
+  .v-date { font-size: 11.5px; color: var(--text-tertiary); font-family: 'DM Mono', monospace; }
+
+  .v-msg { font-size: 13.5px; color: var(--text-primary); line-height: 1.6; margin-bottom: 20px; }
+  
+  .v-footer { 
+    display: flex; align-items: center; justify-content: space-between; 
+    padding-top: 16px; border-top: 1px solid var(--border); 
+  }
+  .v-author { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-secondary); }
+  .v-avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--bg-3); display: grid; place-items: center; font-size: 9px; font-weight: 600; }
+
+  .btn-outline {
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-secondary); font-size: 12px; font-weight: 500;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+
+  /* Upload Modal (Refined) */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    display: none; place-items: center; z-index: 5000;
+    backdrop-filter: blur(8px); padding: 20px;
+  }
+  .modal-backdrop.active { display: grid; }
+  .modal-content {
+    background: var(--bg-1); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 32px; width: 100%; max-width: 440px;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">Immutable Registry</div>
+    <h1 class="page-title">Revision History</h1>
+    <p class="page-subtitle">Full traceability of document evolution, cryptographic versioning, and custodial changes.</p>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn-primary" onclick="document.getElementById('versionModal').classList.add('active')">
+       <svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+       Upload New Version
+    </button>
+  </div>
+</div>
 
-<!-- Document header card -->
-<div class="anim" style="display:flex;align-items:flex-start;gap:16px;
-  background:var(--surface-1);border:1px solid var(--border-dim);border-radius:10px;
-  padding:20px;margin-bottom:22px;position:relative;overflow:hidden;">
-  <div style="position:absolute;top:0;right:0;width:130px;height:130px;
-    background:radial-gradient(circle at top right,var(--amber-lo) 0%,transparent 65%);
-    pointer-events:none;"></div>
-  <div class="fc">
-    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-      <polyline points="13 2 13 9 20 9"></polyline>
-    </svg>
+<div class="version-header">
+  <div class="asset-icon">
+     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
   </div>
-  <div style="flex:1;min-width:0;">
-    <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:6px;">
-      <div style="font-family:var(--font-d);font-size:1.6rem;letter-spacing:0.04em;line-height:1;color:var(--text-0);">
-        Document #{{ document_id }}
-      </div>
-      <span class="bdg ba">{{ versions|length }} version{{ 's' if versions|length != 1 }}</span>
-    </div>
-    <div style="font-size:0.6rem;color:var(--text-2);">Full revision history below</div>
-  </div>
-  <div style="display:flex;gap:22px;flex-shrink:0;">
-    <div style="text-align:center;">
-      <div style="font-family:var(--font-d);font-size:1.6rem;color:var(--text-0);line-height:1;">{{ versions|length }}</div>
-      <div style="font-size:0.5rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-2);margin-top:3px;">Versions</div>
-    </div>
-    <div style="text-align:center;">
-      <div style="font-family:var(--font-d);font-size:1.6rem;color:var(--text-0);line-height:1;">
-        v{{ versions[-1].version_number if versions else '—' }}
-      </div>
-      <div style="font-size:0.5rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-2);margin-top:3px;">Latest</div>
+  <div class="asset-body">
+    <h2 class="asset-title">{{ document.title }}</h2>
+    <div class="asset-meta">
+      Initialized by <strong>{{ document.created_by }}</strong> on {{ document.created_at.strftime('%Y.%m.%d') }} <br>
+      Current Head: <strong>v{{ document.current_version }}</strong> · Total Revisions: {{ versions|length }}
     </div>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 290px;gap:18px;align-items:start;">
-
-  <!-- Version timeline -->
-  <div class="anim d1">
-    <div style="font-size:0.54rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-2);margin-bottom:14px;">
-      Version History
-    </div>
-
-    {% if versions %}
-    <div class="vt">
-      {% for v in versions|reverse %}
-      <div class="vt-item {% if loop.last %}latest{% endif %}">
-        <div class="vt-m">
-          <span class="vt-v">v{{ v.version_number }}</span>
-          {% if loop.last %}
-            <span class="bdg bg2">● Latest</span>
-          {% else %}
-            <span class="bdg bx">Archived</span>
-          {% endif %}
-          <span class="vt-d">{{ v.uploaded_at }}</span>
-        </div>
-        <div class="vt-a">
-          <a href="{{ url_for('document.download_file', version_id=v.id) }}" class="btn btg btn-sm">
-            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Download
-          </a>
-        </div>
+<div class="timeline">
+  {% for version in versions|reverse %}
+  <div class="timeline-item">
+    <div class="timeline-dot"></div>
+    <div class="version-card {% if loop.first %}latest{% endif %}">
+      <div class="v-header">
+        <span class="v-number">VERSION 0{{ version.version_number }}</span>
+        <span class="v-date">{{ version.uploaded_at.strftime('%Y.%m.%d · %H:%M') }}</span>
       </div>
-      {% endfor %}
-    </div>
-
-    {% else %}
-    <div class="empty">
-      <div class="empty-ico">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-          <polyline points="13 2 13 9 20 9"></polyline>
-        </svg>
+      <div class="v-msg">
+        {{ version.change_notes or "No technical notes provided for this version." }}
       </div>
-      <h3>No Versions Found</h3>
-      <p>Upload the first version of this document.</p>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Upload new version panel -->
-  <div class="panel anim d2" style="position:sticky;top:70px;">
-    <div class="panel-head">
-      <span class="ph-ico">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-      </span>
-      <h2>Push New Version</h2>
-      <span class="ph-cnt">→ v{{ (versions|length) + 1 }}</span>
-    </div>
-    <div class="panel-body">
-      <form action="{{ url_for('document.upload_new_version', doc_id=document_id) }}" method="POST" enctype="multipart/form-data">
-        <div class="fg">
-          <label class="fl">File</label>
-          <label class="dz" style="padding:22px 14px;" onclick="event.stopPropagation()">
-            <div class="dz-icon" style="width:34px;height:34px;">
-              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-            </div>
-            <div class="dz-title" style="font-size:0.7rem;">Drop or click to select</div>
-            <div class="dz-sel"></div>
-            <input type="file" name="file" required="">
-          </label>
+      <div class="v-footer">
+        <div class="v-author">
+           <div class="v-avatar">{{ version.uploaded_by[0]|upper if version.uploaded_by else '?' }}</div>
+           <span>{{ version.uploaded_by or 'Unknown' }}</span>
         </div>
-        <button type="submit" class="btn bta" style="width:100%;justify-content:center;">
-          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-          Commit v{{ (versions|length) + 1 }}
-        </button>
-      </form>
+        <a href="{{ url_for('document.download_file', version_id=version.id) }}" class="btn-outline">
+           <svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+           Retrieve Artifact
+        </a>
+      </div>
     </div>
   </div>
+  {% endfor %}
+</div>
 
+<!-- Add Version Modal -->
+<div id="versionModal" class="modal-backdrop" onclick="if(event.target===this)this.classList.remove('active')">
+  <div class="modal-content" style="border-color: rgba(57, 255, 130, 0.15); box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 40px rgba(57, 255, 130, 0.05);">
+    <div class="modal-header">
+       <div class="modal-eyebrow" style="color: #39FF82;">Immutable Revision</div>
+       <h2 class="modal-title">Commit Head Revision</h2>
+    </div>
+    <form action="{{ url_for('document.upload_new_version', doc_id=document.id) }}" method="POST" enctype="multipart/form-data" class="modal-form">
+        <div class="form-group">
+          <label class="form-label" style="font-size: 13px;">Proposed Changes v0{{ document.current_version + 1 }}</label>
+          <textarea name="notes" class="form-control" rows="3" placeholder="Technical justification for this commit..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Binary Payload</label>
+          <input type="file" name="file" class="form-control" required style="padding: 10px;">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-ghost" onclick="document.getElementById('versionModal').classList.remove('active')">Dismiss</button>
+          <button type="submit" class="btn-modal-primary" style="background: #39FF82; box-shadow: 0 0 20px rgba(57,255,130,0.3);">Commit Version</button>
+        </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
-</body></html>

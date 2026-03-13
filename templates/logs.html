@@ -1,81 +1,124 @@
 {% extends "base.html" %}
-{% block title %}Activity Logs - BuildSmart{% endblock %}
-{% block breadcrumb %}Activity Logs{% endblock %}
 
-{% block topbar_right %}
-<a href="{{ url_for('document.repository') }}" class="btn bto">
-  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-    <polyline points="15 18 9 12 15 6"/>
-  </svg>
-  Repository
-</a>
+{% block title %}Audit Stream — BuildSmart{% endblock %}
+{% block page_class %}page-logs{% endblock %}
+{% block breadcrumb %}Audit Stream{% endblock %}
+
+{% block extra_css %}
+<style>
+  .logs-card { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  
+  .logs-header { 
+    padding: 24px 32px; border-bottom: 1px solid var(--border); 
+    display: flex; align-items: center; justify-content: space-between; 
+    background: linear-gradient(90deg, var(--bg-2), transparent);
+  }
+  .logs-title { font-size: 16px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 12px; }
+  .pulse-icon { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); animation: pulse 2s infinite; }
+  
+  @keyframes pulse { 
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { 
+    text-align: left; padding: 14px 24px; font-size: 10px; font-weight: 600; 
+    color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1.2px; 
+    border-bottom: 1px solid var(--border); background: var(--bg-1);
+  }
+  td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg-2); }
+
+  .log-action { font-weight: 500; color: var(--text-primary); }
+  .log-performed-by { display: flex; align-items: center; gap: 10px; }
+  .log-avatar { 
+    width: 24px; height: 24px; border-radius: 50%; background: var(--accent-dim); 
+    display: grid; place-items: center; font-size: 10px; font-weight: 600; color: var(--accent); 
+  }
+  
+  .log-timestamp { font-family: 'DM Mono', monospace; font-size: 11.5px; color: var(--text-secondary); }
+  
+  .badge-action { 
+    font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; 
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .log-upload { background: rgba(57, 255, 130, 0.1); color: #39FF82; }
+  .log-version { background: rgba(41, 121, 255, 0.1); color: #2979FF; }
+  .log-login { background: rgba(191, 95, 255, 0.1); color: #BF5FFF; }
+
+  /* Empty State */
+  .empty-logs { padding: 100px 40px; text-align: center; color: var(--text-tertiary); }
+</style>
 {% endblock %}
 
 {% block content %}
-
-<div class="ph anim">
-  <div class="ph-eye">// AUDIT TRAIL</div>
-  <div class="ph-title">Activity Logs</div>
-  <div class="ph-sub">Full record of every upload and version action in the system.</div>
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">Stakeholder Accountability</div>
+    <h1 class="page-title">Audit Stream</h1>
+    <p class="page-subtitle">Real-time cryptographic trail of every system interaction, document modification, and access event.</p>
+  </div>
 </div>
 
-<div class="panel anim d1">
-  <div class="panel-head">
-    <span class="ph-ico">
-      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-      </svg>
-    </span>
-    <h2>System Logs</h2>
-    <span class="ph-cnt">{{ logs|length }} events</span>
+<div class="logs-card">
+  <div class="logs-header">
+    <div class="logs-title">
+      <span class="pulse-icon"></span>
+      Live System Trace
+    </div>
+    <div style="font-size: 11px; color: var(--text-tertiary); font-family: 'DM Mono', monospace;">
+      TRACE_ID: 0x{{ range(1000, 9999)|random }}...{{ range(1000, 9999)|random }}
+    </div>
   </div>
 
   {% if logs %}
-  <table class="dt">
+  <table>
     <thead>
       <tr>
-        <th>Doc ID</th>
-        <th>Action</th>
-        <th>Performed By</th>
+        <th>Event Protocol</th>
+        <th>Custodian</th>
+        <th>Target Object</th>
         <th>Timestamp</th>
       </tr>
     </thead>
     <tbody>
-      {% for log in logs %}
+      {% for log in logs|reverse %}
       <tr>
         <td>
-          <a href="{{ url_for('document.view_versions', document_id=log.document_id) }}"
-             style="color:var(--amber);text-decoration:none;font-weight:500;">
-            #{{ log.document_id }}
-          </a>
+          {% if 'upload' in log.action.lower() %}
+            <span class="badge-action log-upload">INITIAL_SUBMISSION</span>
+          {% elif 'version' in log.action.lower() %}
+            <span class="badge-action log-version">REVISION_COMMIT</span>
+          {% else %}
+            <span class="badge-action log-login">SYSTEM_EVENT</span>
+          {% endif %}
+          <div class="log-action" style="margin-top:6px;">{{ log.action }}</div>
         </td>
         <td>
-          {% if log.action == 'UPLOAD' %}
-            <span class="bdg bg2">{{ log.action }}</span>
-          {% elif log.action == 'NEW_VERSION' %}
-            <span class="bdg ba">{{ log.action }}</span>
-          {% else %}
-            <span class="bdg bx">{{ log.action }}</span>
-          {% endif %}
+          <div class="log-performed-by">
+            <div class="log-avatar">{{ log.performed_by[0]|upper }}</div>
+            <span>{{ log.performed_by }}</span>
+          </div>
         </td>
-        <td style="color:var(--text-1);">{{ log.performed_by }}</td>
-        <td style="font-size:0.85rem;">{{ log.timestamp }}</td>
+        <td style="color: var(--text-secondary); font-size: 12.5px;">
+          {{ log.details or "Global System Context" }}
+        </td>
+        <td class="log-timestamp">
+          {{ log.timestamp.strftime('%Y.%m.%d · %H:%M:%S') }}
+        </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-
   {% else %}
-  <div class="empty">
-    <div class="empty-ico">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-      </svg>
-    </div>
-    <h3>No Logs Yet</h3>
-    <p>Activity will appear here after uploads.</p>
+  <div class="empty-logs">
+    <div style="font-size: 48px; margin-bottom: 20px; opacity: 0.2;">○</div>
+    <h3>No Trace Detected</h3>
+    <p style="font-size: 14px; margin-top: 8px;">The system has not recorded any forensic events in this session.</p>
   </div>
   {% endif %}
-
 </div>
 {% endblock %}

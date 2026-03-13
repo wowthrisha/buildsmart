@@ -1,115 +1,158 @@
 {% extends "base.html" %}
-{% block title %}Repository - BuildSmart{% endblock %}
-{% block breadcrumb %}Document Repository{% endblock %}
+
+{% block title %}Document Vault — BuildSmart{% endblock %}
+{% block page_class %}page-vault{% endblock %}
+{% block breadcrumb %}Document Vault{% endblock %}
+
+{% block extra_css %}
+<style>
+  .vault-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 16px; }
+  
+  .search-wrap { position: relative; flex: 1; max-width: 400px; }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none; }
+  .search-icon svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .search-input { 
+    width: 100%; padding: 11px 16px 11px 40px; background: var(--bg-1); border: 1px solid var(--border); 
+    border-radius: 10px; color: #fff; font-size: 13px; transition: all 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); background: var(--bg-2); outline: none; box-shadow: 0 0 0 4px var(--accent-subtle); }
+
+  /* Table Style */
+  .vault-panel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  
+  table { width: 100%; border-collapse: collapse; text-align: left; }
+  th { 
+    background: var(--bg-2); padding: 12px 24px; font-size: 10.5px; font-weight: 500; 
+    color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); 
+  }
+  td { padding: 16px 24px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg-0); }
+
+  .doc-info { display: flex; align-items: center; gap: 14px; }
+  .doc-icon { 
+    width: 40px; height: 40px; border-radius: 10px; background: var(--accent-dim); 
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .doc-icon svg { width: 18px; height: 18px; stroke: var(--accent); stroke-width: 1.5; fill: none; }
+  
+  .doc-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+  .doc-desc { font-size: 12px; color: var(--text-secondary); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .version-badge { 
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; 
+    border-radius: 6px; background: var(--bg-2); border: 1px solid var(--border);
+    font-size: 11px; font-weight: 500; color: var(--text-secondary); font-family: 'DM Mono', monospace;
+  }
+  
+  .author-cell { display: flex; align-items: center; gap: 10px; }
+  .author-avatar { 
+    width: 24px; height: 24px; border-radius: 50%; background: var(--bg-3); 
+    display: grid; place-items: center; font-size: 9px; font-weight: 600; color: var(--text-secondary);
+  }
+
+  .action-btn { 
+    padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg-2); color: var(--text-secondary); font-size: 12px;
+    font-weight: 500; text-decoration: none; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+
+  /* Empty State */
+  .empty-state { padding: 80px 40px; text-align: center; }
+  .empty-icon { width: 64px; height: 64px; border-radius: 20px; background: var(--bg-2); display: grid; place-items: center; margin: 0 auto 24px; color: var(--text-tertiary); }
+  .empty-icon svg { width: 32px; height: 32px; stroke-width: 1; }
+  .empty-title { font-size: 18px; font-weight: 500; color: var(--text-primary); margin-bottom: 8px; }
+  .empty-text { font-size: 14px; color: var(--text-secondary); max-width: 320px; margin: 0 auto 32px; }
+
+  .btn-primary {
+    background: var(--accent); color: #000; border: none; padding: 11px 20px;
+    border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; box-shadow: 0 0 20px var(--accent-glow);
+    transition: all 0.3s;
+  }
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 0 30px var(--accent-glow); }
+</style>
+{% endblock %}
 
 {% block content %}
-
-<div class="ph-row anim" style="margin-bottom:22px;">
+<div class="page-header">
   <div>
-    <div class="ph-eye">// DOCUMENT VAULT</div>
-    <div class="ph-title">Repository</div>
-    <div class="ph-sub">All tracked documents and their version history.</div>
+    <div class="page-eyebrow">Document Sovereignty</div>
+    <h1 class="page-title">The Vault</h1>
+    <p class="page-subtitle">Unified repository for immutable project assets, technical specifications, and legal compliance artifacts.</p>
   </div>
-  <a href="{{ url_for('document.home') }}" class="btn bta">
-    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-    Upload New Document
-  </a>
-</div>
-
-<div class="stat-row anim d1">
-  <div class="stat-tile">
-    <div class="st-k">Total Documents</div>
-    <div class="st-n">{{ documents|length }}<sub> docs</sub></div>
-    <div class="st-note up">all tracked</div>
-  </div>
-  <div class="stat-tile">
-    <div class="st-k">Latest Upload</div>
-    <div class="st-n" style="font-size:1rem;padding-top:6px;word-break:break-all;">
-      {% if documents %}{{ documents[-1].title[:20] }}{% else %}none{% endif %}
-    </div>
-    <div class="st-note wa">most recent</div>
-  </div>
-  <div class="stat-tile">
-    <div class="st-k">Activity Logs</div>
-    <div class="st-n" style="font-size:1.6rem;padding-top:4px;">
-      <a href="{{ url_for('document.logs') }}" style="color:var(--amber);text-decoration:none;">View</a>
-    </div>
-    <div class="st-note">full audit trail</div>
+  <div class="page-header-actions">
+     <button class="btn-primary" onclick="openGlobalUpload()">
+      <svg viewBox="0 0 24 24" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:2.5;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Commit New Asset
+    </button>
   </div>
 </div>
 
-<div class="panel anim d2">
-  <div class="panel-head">
-    <span class="ph-ico">
-      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-      </svg>
-    </span>
-    <h2>Document Vault</h2>
-    <span class="ph-cnt">{{ documents|length }} records</span>
+<div class="vault-controls">
+  <div class="search-wrap">
+    <div class="search-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+    <input type="text" class="search-input" placeholder="Query registry by name or protocol ID...">
   </div>
+</div>
 
+<div class="vault-panel">
   {% if documents %}
-  <table class="dt">
+  <table>
     <thead>
       <tr>
-        <th>#</th>
-        <th>Title</th>
-        <th>Description</th>
-        <th>Version</th>
-        <th>Actions</th>
+        <th>Asset Designation</th>
+        <th>Revision</th>
+        <th>Custodian</th>
+        <th>Timestamp</th>
+        <th style="text-align:right">Traceability</th>
       </tr>
     </thead>
     <tbody>
       {% for doc in documents %}
       <tr>
-        <td style="color:var(--text-2);">{{ doc.id }}</td>
         <td>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:30px;height:30px;border-radius:5px;background:var(--amber-mid);
-                        border:1px solid rgba(59,130,246,0.18);display:flex;align-items:center;
-                        justify-content:center;color:var(--amber);flex-shrink:0;">
-              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                <polyline points="13 2 13 9 20 9"/>
-              </svg>
+          <div class="doc-info">
+            <div class="doc-icon">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             </div>
-            <div class="tdp">{{ doc.title }}</div>
+            <div>
+              <div class="doc-name">{{ doc.title }}</div>
+              <div class="doc-desc">{{ doc.description or "No metadata provided." }}</div>
+            </div>
           </div>
         </td>
-        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);">
-          {{ doc.description or 'N/A' }}
-        </td>
-        <td><span class="bdg ba">v{{ doc.current_version }}</span></td>
         <td>
-          <div class="tda">
-            <a href="{{ url_for('document.view_versions', document_id=doc.id) }}" class="btn btg btn-sm">
-              View Versions
-            </a>
-            <a href="{{ url_for('document.view_versions', document_id=doc.id) }}" class="btn bta btn-sm">
-              New Version
-            </a>
+          <div class="version-badge">v{{ doc.current_version }}</div>
+        </td>
+        <td>
+          <div class="author-cell">
+            <div class="author-avatar">{{ doc.created_by[0]|upper }}</div>
+            <span style="font-size:13px">{{ doc.created_by }}</span>
           </div>
+        </td>
+        <td style="font-family: 'DM Mono', monospace; font-size: 11.5px; color: var(--text-secondary);">
+          {{ doc.created_at.strftime('%Y.%m.%d · %H:%M') }}
+        </td>
+        <td style="text-align:right">
+          <a href="{{ url_for('document.view_versions', document_id=doc.id) }}" class="action-btn">
+            History Output
+            <svg viewBox="0 0 24 24" width="12" height="12" style="stroke:currentColor;fill:none;stroke-width:2;"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-
   {% else %}
-  <div class="empty">
-    <div class="empty-ico">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-      </svg>
-    </div>
-    <h3>No Documents Yet</h3>
-    <p>Upload your first document to begin.</p>
-    <a href="{{ url_for('document.home') }}" class="btn bta">Upload First Document</a>
+  <div class="empty-state">
+    <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+    <h3 class="empty-title">Vault is Empty</h3>
+    <p class="empty-text">Initialize your first document submission from the Operations Center to begin the project's digital twin.</p>
+    <a href="{{ url_for('document.dashboard') }}" class="btn-primary" style="display:inline-flex">Return to Ops Center</a>
   </div>
   {% endif %}
-
 </div>
 {% endblock %}

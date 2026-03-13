@@ -3,4 +3,6 @@ __pycache__/
 .env
 uploads/
 instance/
-buildsmart.db
+*.db
+venv/
+.DS_Store
