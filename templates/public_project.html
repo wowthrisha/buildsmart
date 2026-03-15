@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ project.name }} | BuildSmart Public Feed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Cormorant+Garamond:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f1ece4;
+      --surface: rgba(255, 255, 255, 0.72);
+      --surface-strong: rgba(255, 255, 255, 0.9);
+      --text: #171411;
+      --muted: #6e6458;
+      --line: rgba(23, 20, 17, 0.1);
+      --accent: #c96f2d;
+      --accent-soft: rgba(201, 111, 45, 0.16);
+      --ok: #1d7a46;
+      --shadow: 0 30px 80px rgba(48, 34, 20, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(201, 111, 45, 0.16), transparent 30%),
+        linear-gradient(180deg, #efe6db 0%, #f7f4ef 100%);
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 40px auto;
+      display: grid;
+      gap: 24px;
+    }
+
+    .hero,
+    .panel {
+      background: var(--surface);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(14px);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 34px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -120px auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201, 111, 45, 0.18), transparent 70%);
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    h1, h2 {
+      margin: 0;
+      font-family: "Cormorant Garamond", serif;
+      font-weight: 500;
+      letter-spacing: -0.6px;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 5vw, 4.4rem);
+      line-height: 0.95;
+      max-width: 720px;
+    }
+
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 18px;
+    }
+
+    .lead {
+      max-width: 700px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .meta-pill {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--surface-strong);
+      border: 1px solid var(--line);
+      font-size: 0.92rem;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 0.95fr 1.25fr;
+      gap: 24px;
+    }
+
+    .panel {
+      padding: 28px;
+    }
+
+    .progress-track {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .progress-step {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .step-marker {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.65);
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .progress-step.complete .step-marker,
+    .progress-step.active .step-marker {
+      background: var(--accent);
+      border-color: transparent;
+      color: white;
+    }
+
+    .step-name {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .step-state {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .timeline {
+      position: relative;
+      margin-top: 8px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      top: 8px;
+      bottom: 8px;
+      left: 11px;
+      width: 2px;
+      background: linear-gradient(180deg, var(--accent), rgba(23, 20, 17, 0.08));
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-left: 40px;
+      padding-bottom: 22px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 6px var(--accent-soft);
+    }
+
+    .event-type {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .event-body {
+      margin: 6px 0 8px;
+      line-height: 1.7;
+    }
+
+    .event-time {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .status-banner {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(29, 122, 70, 0.08);
+      border: 1px solid rgba(29, 122, 70, 0.14);
+      color: var(--ok);
+    }
+
+    @media (max-width: 900px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+
+      .page {
+        width: min(1120px, calc(100% - 20px));
+        margin: 20px auto;
+      }
+
+      .hero,
+      .panel {
+        border-radius: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% set current_index = progress_stages.index(current_stage) if current_stage in progress_stages else 0 %}
+
+  <div class="page">
+    <section class="hero">
+      <div class="eyebrow">Public Project Timeline</div>
+      <h1>{{ project.name }}</h1>
+      <p class="lead">{{ project.description or "This project is being tracked publicly through the BuildSmart approval timeline." }}</p>
+
+      <div class="hero-meta">
+        <div class="meta-pill">Project ID: PRJ-{{ "%04d"|format(project.id) }}</div>
+        <div class="meta-pill">Current Stage: {{ current_stage }}</div>
+        <div class="meta-pill">Created {{ project.created_at.strftime("%d %b %Y") }}</div>
+      </div>
+    </section>
+
+    <section class="content">
+      <article class="panel">
+        <div class="eyebrow">Progress Stage</div>
+        <h2>Approval Tracker</h2>
+        <div class="progress-track">
+          {% for stage in progress_stages %}
+            {% set stage_index = loop.index0 %}
+            <div class="progress-step {% if stage_index < current_index %}complete{% elif stage == current_stage %}active{% endif %}">
+              <div class="step-marker">{{ loop.index }}</div>
+              <div>
+                <div class="step-name">{{ stage }}</div>
+                <div class="step-state">
+                  {% if stage_index < current_index %}
+                    Completed
+                  {% elif stage == current_stage %}
+                    In progress
+                  {% else %}
+                    Pending
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if latest_rejection %}
+          <div class="status-banner">{{ latest_rejection.description }}</div>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="eyebrow">Live Feed</div>
+        <h2>Timeline Events</h2>
+        <div class="timeline">
+          {% for event in events %}
+            <div class="timeline-item">
+              <div class="event-type">{{ event.event_type }}</div>
+              <div class="event-body">{{ event.description }}</div>
+              <div class="event-time">{{ event.created_at.strftime("%d %b %Y, %I:%M %p") }}</div>
+            </div>
+          {% else %}
+            <p class="lead" style="margin-top: 0;">No project events have been published yet.</p>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+  </div>
+</body>
+</html>
