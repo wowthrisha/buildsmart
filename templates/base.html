@@ -37,10 +37,11 @@
 
     /* ─── Page themes ───────────────────────────────────── */
     .page-auth      { --accent:#2979FF; --accent-dim:rgba(41,121,255,.12); --accent-glow:rgba(41,121,255,.35); --accent-subtle:rgba(41,121,255,.06); }
-    .page-vault     { --accent:#39FF82; --accent-dim:rgba(57,255,130,.12); --accent-glow:rgba(57,255,130,.35); --accent-subtle:rgba(57,255,130,.06); }
-    .page-logs      { --accent:#BF5FFF; --accent-dim:rgba(191,95,255,.12); --accent-glow:rgba(191,95,255,.35); --accent-subtle:rgba(191,95,255,.06); }
-    .page-dashboard { --accent:#FF6B1A; --accent-dim:rgba(255,107,26,.12); --accent-glow:rgba(255,107,26,.35); --accent-subtle:rgba(255,107,26,.06); }
+    .page-vault     { --accent:#2979FF; --accent-dim:rgba(41,121,255,.12); --accent-glow:rgba(41,121,255,.35); --accent-subtle:rgba(41,121,255,.06); }
+    .page-logs      { --accent:#2979FF; --accent-dim:rgba(41,121,255,.12); --accent-glow:rgba(41,121,255,.35); --accent-subtle:rgba(41,121,255,.06); }
+    .page-dashboard { --accent:#2979FF; --accent-dim:rgba(41,121,255,.12); --accent-glow:rgba(41,121,255,.35); --accent-subtle:rgba(41,121,255,.06); }
     .page-profile   { --accent:#2979FF; --accent-dim:rgba(41,121,255,0.12); --accent-glow:rgba(41,121,255,0.35); --accent-subtle:rgba(41,121,255,0.06); }
+    .page-timeline  { --accent:#2979FF; --accent-dim:rgba(41,121,255,.12); --accent-glow:rgba(41,121,255,.35); --accent-subtle:rgba(41,121,255,.06); }
 
     html, body {
       height: 100%;
@@ -384,10 +385,10 @@
     .modal-content {
       background: rgba(15, 15, 15, 0.7);
       backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 107, 26, 0.15);
+      border: 1px solid rgba(41, 121, 255, 0.15);
       border-radius: 20px; padding: 40px; 
       width: 100%; max-width: 500px;
-      box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 40px rgba(255, 107, 26, 0.05);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 40px rgba(41, 121, 255, 0.05);
       animation: modalSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
     }
@@ -395,7 +396,7 @@
     .modal-content::before {
       content: ''; position: absolute; inset: 0;
       border-radius: 20px; padding: 1px;
-      background: linear-gradient(135deg, rgba(255,107,26,0.3), transparent 50%, rgba(255,107,26,0.1));
+      background: linear-gradient(135deg, rgba(41,121,255,0.3), transparent 50%, rgba(41,121,255,0.1));
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
@@ -404,7 +405,7 @@
     }
 
     .modal-header { margin-bottom: 32px; }
-    .modal-eyebrow { font-size: 10px; font-weight: 600; color: #FF6B1A; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .modal-eyebrow { font-size: 10px; font-weight: 600; color: #2979FF; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
     .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; color: #fff; letter-spacing: -0.5px; }
 
     .modal-form .form-group { margin-bottom: 24px; }
@@ -416,18 +417,18 @@
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .modal-form .form-control:focus {
-      background: rgba(255,107,26,0.04); border-color: rgba(255,107,26,0.4);
-      box-shadow: 0 0 0 4px rgba(255,107,26,0.1); outline: none;
+      background: rgba(41,121,255,0.04); border-color: rgba(41,121,255,0.4);
+      box-shadow: 0 0 0 4px rgba(41,121,255,0.1); outline: none;
     }
 
     .modal-footer { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 40px; }
     
     .btn-modal-primary {
-      background: #FF6B1A; color: #000; border: none; border-radius: 12px; 
+      background: #2979FF; color: #000; border: none; border-radius: 12px; 
       padding: 14px; font-weight: 600; font-size: 14px; cursor: pointer;
-      box-shadow: 0 0 20px rgba(255,107,26,0.3); transition: all 0.3s;
+      box-shadow: 0 0 20px rgba(41,121,255,0.3); transition: all 0.3s;
     }
-    .btn-modal-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(255,107,26,0.5); filter: brightness(1.1); }
+    .btn-modal-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(41,121,255,0.5); filter: brightness(1.1); }
 
     .btn-modal-ghost {
       background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1);
@@ -480,6 +481,14 @@
           <svg viewBox="0 0 24 24"><line x1="17" y1="21" x2="17" y2="13"/><line x1="7" y1="21" x2="7" y2="3"/><line x1="12" y1="21" x2="12" y2="8"/></svg>
         </div>
         Audit Stream
+      </a>
+
+      <a href="{{ url_for('timeline.projects') }}"
+         class="nav-item {% if request.endpoint in ['timeline.projects', 'timeline.timeline'] %}active{% endif %}">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/><circle cx="6" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg>
+        </div>
+        Project Timeline
       </a>
     </div>
 

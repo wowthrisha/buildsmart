@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}Project Timeline | BuildSmart{% endblock %}
+{% block page_class %}page-dashboard{% endblock %}
+{% block breadcrumb %}Project Timeline{% endblock %}
+
+{% block extra_css %}
+  .timeline-layout {
+    display: grid;
+    grid-template-columns: 1.5fr 0.9fr;
+    gap: 24px;
+  }
+
+  .panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 24px;
+  }
+
+  .project-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 22px;
+  }
+
+  .meta-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .meta-label {
+    color: var(--text-secondary);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    margin-bottom: 8px;
+  }
+
+  .meta-value {
+    font-size: 15px;
+    color: var(--text-primary);
+  }
+
+  .progress-bar {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat({{ progress_stages|length }}, 1fr);
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .progress-bar::before {
+    content: "";
+    position: absolute;
+    top: 17px;
+    left: 18px;
+    right: 18px;
+    height: 2px;
+    background: rgba(255,255,255,0.08);
+  }
+
+  .progress-step {
+    position: relative;
+    text-align: center;
+    z-index: 1;
+  }
+
+  .step-dot {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    display: grid;
+    place-items: center;
+    background: var(--bg-3);
+    border: 1px solid var(--border-bright);
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  .progress-step.active .step-dot,
+  .progress-step.complete .step-dot {
+    background: var(--accent);
+    color: #050505;
+    border-color: transparent;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .step-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .progress-step.active .step-label,
+  .progress-step.complete .step-label {
+    color: var(--text-primary);
+  }
+
+  .timeline-feed {
+    position: relative;
+    margin-top: 10px;
+  }
+
+  .timeline-feed::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 11px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--accent), rgba(255,255,255,0.08));
+  }
+
+  .timeline-item {
+    position: relative;
+    padding-left: 42px;
+    padding-bottom: 24px;
+  }
+
+  .timeline-item:last-child {
+    padding-bottom: 0;
+  }
+
+  .timeline-item::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 18px var(--accent-glow);
+  }
+
+  .event-type {
+    font-size: 12px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+
+  .event-description {
+    font-size: 15px;
+    color: var(--text-primary);
+    margin: 6px 0;
+  }
+
+  .event-timestamp {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .input-grid {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .form-control {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-2);
+    color: var(--text-primary);
+    padding: 13px 14px;
+    font: inherit;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-subtle);
+  }
+
+  .btn-primary {
+    border: none;
+    border-radius: 14px;
+    background: var(--accent);
+    color: #050505;
+    padding: 13px 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .status-note {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 980px) {
+    .timeline-layout,
+    .project-meta {
+      grid-template-columns: 1fr;
+    }
+  }
+{% endblock %}
+
+{% block content %}
+  <section class="page-header">
+    <div>
+      <div class="page-eyebrow">Timeline Control</div>
+      <h1 class="page-title">{{ project.name }}</h1>
+      <p class="page-subtitle">{{ project.description or "No project description has been added yet." }}</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="project-meta">
+      <div class="meta-card">
+        <div class="meta-label">Project ID</div>
+        <div class="meta-value">PRJ-{{ "%04d"|format(project.id) }}</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-label">Created</div>
+        <div class="meta-value">{{ project.created_at.strftime("%d %b %Y, %I:%M %p") }}</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-label">Current Stage</div>
+        <div class="meta-value">{{ current_stage }}</div>
+      </div>
+    </div>
+
+    {% set current_index = progress_stages.index(current_stage) if current_stage in progress_stages else 0 %}
+    <div class="progress-bar">
+      {% for stage in progress_stages %}
+        {% set stage_index = loop.index0 %}
+        <div class="progress-step {% if stage_index < current_index %}complete{% elif stage == current_stage %}active{% endif %}">
+          <div class="step-dot">{{ loop.index }}</div>
+          <div class="step-label">{{ stage }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if latest_rejection %}
+      <div class="status-note">
+        Latest review outcome: {{ latest_rejection.description }}
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="timeline-layout">
+    <div class="panel">
+      <div class="page-eyebrow">Chronological Feed</div>
+      <h2 class="page-title" style="font-size: 30px;">Project Timeline</h2>
+
+      <div class="timeline-feed">
+        {% for event in events %}
+          <article class="timeline-item">
+            <div class="event-type">{{ event.event_type }}</div>
+            <div class="event-description">{{ event.description }}</div>
+            <div class="event-timestamp">{{ event.created_at.strftime("%d %b %Y, %I:%M %p") }}</div>
+          </article>
+        {% else %}
+          <p class="page-subtitle">No timeline events recorded for this project yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div class="page-eyebrow">Milestone Entry</div>
+      <h2 class="page-title" style="font-size: 30px;">Add Event</h2>
+      <p class="page-subtitle">Track review milestones, document movement, and approval outcomes in one feed.</p>
+
+      <form action="{{ url_for('timeline.add_timeline_event') }}" method="POST" class="input-grid">
+        <input type="hidden" name="project_id" value="{{ project.id }}">
+
+        <div>
+          <label class="form-label" for="event_type">Event Type</label>
+          <select id="event_type" name="event_type" class="form-control" required>
+            <option value="">Select event</option>
+            <option>Project Created</option>
+            <option>Document Uploaded</option>
+            <option>Compliance Check Completed</option>
+            <option>Submitted for Approval</option>
+            <option>Authority Review</option>
+            <option>Approval Granted</option>
+            <option>Approval Rejected</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label" for="description">Description</label>
+          <textarea id="description" name="description" class="form-control" rows="5" required placeholder="Describe the milestone or approval update."></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary">Save Timeline Event</button>
+      </form>
+    </aside>
+  </section>
+{% endblock %}

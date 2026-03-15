@@ -2,6 +2,7 @@ from flask import Flask, redirect, url_for
 from config import Config
 from extensions import db
 from flask_jwt_extended import JWTManager
+import models
 
 
 def create_app():
@@ -24,9 +25,14 @@ def create_app():
     # register routes
     from routes.document_routes import document_bp
     from routes.auth_routes import auth_bp
+    from routes.timeline_routes import timeline_bp
     
     app.register_blueprint(document_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(timeline_bp)
+
+    with app.app_context():
+        db.create_all()
 
     return app
 

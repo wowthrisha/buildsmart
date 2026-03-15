@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Project Timeline | BuildSmart{% endblock %}
+{% block page_class %}page-timeline{% endblock %}
+{% block breadcrumb %}Project Timeline{% endblock %}
+
+{% block extra_css %}
+<style>
+  .timeline-shell {
+    display: grid;
+    grid-template-columns: 1.4fr 0.95fr;
+    gap: 24px;
+  }
+
+  .panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 24px;
+  }
+
+  .project-grid {
+    display: grid;
+    gap: 18px;
+  }
+
+  .project-card {
+    padding: 22px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background:
+      radial-gradient(circle at top right, rgba(215,162,74,0.12), transparent 28%),
+      var(--bg-1);
+  }
+
+  .project-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: flex-start;
+  }
+
+  .project-title {
+    font-size: 24px;
+    font-family: 'Cormorant Garamond', serif;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+  }
+
+  .project-copy {
+    margin-top: 8px;
+    color: var(--text-secondary);
+    max-width: 540px;
+  }
+
+  .stage-chip {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .project-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  .progress-track {
+    margin-top: 18px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #9A6B1F, var(--accent));
+    box-shadow: 0 0 24px var(--accent-glow);
+  }
+
+  .card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    text-decoration: none;
+    border-radius: 12px;
+    padding: 11px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #050505;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-secondary {
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    background: var(--bg-2);
+  }
+
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: translateY(-1px);
+  }
+
+  .event-preview {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .event-label {
+    color: var(--text-tertiary);
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .event-copy {
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .form-grid {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .form-control {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-2);
+    color: var(--text-primary);
+    padding: 13px 14px;
+    font: inherit;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-subtle);
+  }
+
+  .empty-panel {
+    padding: 28px;
+    border: 1px dashed var(--border-bright);
+    border-radius: 18px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  @media (max-width: 980px) {
+    .timeline-shell {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">Milestone Visibility</div>
+    <h1 class="page-title">Project Timeline</h1>
+    <p class="page-subtitle">A dedicated workspace for milestone tracking, approval progression, and public sharing.</p>
+  </div>
+</div>
+
+<div class="timeline-shell">
+  <section class="panel">
+    <div class="page-eyebrow">Tracked Projects</div>
+    <h2 class="page-title" style="font-size: 30px;">Timeline Workspace</h2>
+
+    <div class="project-grid" style="margin-top: 22px;">
+      {% for summary in project_summaries %}
+        <article class="project-card">
+          <div class="project-head">
+            <div>
+              <div class="project-title">{{ summary.project.name }}</div>
+              <p class="project-copy">{{ summary.project.description or "No description provided for this project yet." }}</p>
+            </div>
+            <div class="stage-chip">{{ summary.current_stage }}</div>
+          </div>
+
+          <div class="project-meta">
+            <span>PRJ-{{ "%04d"|format(summary.project.id) }}</span>
+            <span>Created {{ summary.project.created_at.strftime("%d %b %Y") }}</span>
+            <span>{{ summary.events|length }} events</span>
+          </div>
+
+          <div class="progress-track">
+            <div class="progress-fill" style="width: {{ summary.progress_percent }}%;"></div>
+          </div>
+
+          <div class="card-actions">
+            <a class="btn-secondary" href="{{ url_for('timeline.timeline', project_id=summary.project.id) }}">Open Timeline</a>
+            <a class="btn-secondary" href="{{ url_for('timeline.public_project', project_id=summary.project.id) }}" target="_blank" rel="noopener">Open Public Page</a>
+          </div>
+
+          {% if summary.events %}
+            <div class="event-preview">
+              <div class="event-label">Latest Event</div>
+              <div class="event-copy">{{ summary.events[0].event_type }}: {{ summary.events[0].description }}</div>
+            </div>
+          {% endif %}
+        </article>
+      {% else %}
+        <div class="empty-panel">
+          No projects are being tracked yet. Use the panel on the right to initialize the first public timeline.
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="page-eyebrow">New Project</div>
+    <h2 class="page-title" style="font-size: 30px;">Create Timeline</h2>
+    <p class="page-subtitle">This creates a project record and seeds the first `Project Created` event automatically.</p>
+
+    <form action="{{ url_for('timeline.create_project') }}" method="POST" class="form-grid">
+      <div>
+        <label class="form-label" for="name">Project Name</label>
+        <input id="name" name="name" class="form-control" required placeholder="e.g. North Block Commercial Tower">
+      </div>
+
+      <div>
+        <label class="form-label" for="description">Description</label>
+        <textarea id="description" name="description" rows="6" class="form-control" placeholder="Short public-facing summary of the project and approval context."></textarea>
+      </div>
+
+      <button type="submit" class="btn-primary">Create Project Timeline</button>
+    </form>
+  </aside>
+</div>
+{% endblock %}
