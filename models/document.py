@@ -17,7 +17,7 @@ class Document(db.Model):
 
 
 class DocumentVersion(db.Model):
-    __tablename__ = "document_versions"65
+    __tablename__ = "document_versions"
 
     id = db.Column(db.Integer, primary_key=True)
     document_id = db.Column(db.Integer)

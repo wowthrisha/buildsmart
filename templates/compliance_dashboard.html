@@ -1,898 +1,311 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BuildSmart — Compliance Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% extends "base.html" %}
 
+{% block title %}Compliance Tracker — BuildSmart{% endblock %}
+{% block page_class %}page-dashboard{% endblock %}
+{% block breadcrumb %}Compliance Tracker{% endblock %}
+
+{% block extra_css %}
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  @media(max-width:1024px){ .stats-row { grid-template-columns: 1fr 1fr; } }
 
-  :root {
-    --bg-0: #050505;
-    --bg-1: #080808;
-    --bg-2: #0f0f0f;
-    --bg-3: #151515;
-    --bg-4: #1c1c1c;
-    --border: rgba(255,255,255,0.06);
-    --border-bright: rgba(255,255,255,0.12);
-    --text-primary: #f0f0f0;
-    --text-secondary: #888;
-    --text-tertiary: #444;
-    --accent: #FF6B1A;
-    --accent-dim: rgba(255,107,26,.12);
-    --accent-glow: rgba(255,107,26,.35);
-    --accent-subtle: rgba(255,107,26,.06);
-    --sidebar-w: 260px;
-    --topbar-h: 60px;
-    --radius: 14px;
-    --radius-sm: 8px;
-    /* status colours */
-    --ready:    #39FF82;
-    --needs:    #FFD600;
-    --notready: #FF4D6D;
-  }
-
-  html, body {
-    height: 100%;
-    background: var(--bg-0);
-    color: var(--text-primary);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .shell {
-    display: grid;
-    grid-template-columns: var(--sidebar-w) 1fr;
-    grid-template-rows: var(--topbar-h) 1fr;
-    min-height: 100vh;
-  }
-
-  /* ─── Sidebar ─────────────────────────────────────────── */
-  .sidebar {
-    grid-row: 1 / 3;
-    background: var(--bg-1);
-    border-right: 1px solid var(--border);
-    display: flex; flex-direction: column;
-    padding: 0; position: relative; overflow: hidden;
-  }
-  .sidebar::before {
-    content: '';
-    position: absolute; top: -80px; left: -80px;
-    width: 260px; height: 260px;
-    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-    opacity: 0.25; pointer-events: none;
-  }
-  .sidebar-logo {
-    display: flex; align-items: center; gap: 10px;
-    padding: 20px 24px; border-bottom: 1px solid var(--border);
-    height: var(--topbar-h);
-  }
-  .logo-mark {
-    width: 28px; height: 28px; background: var(--accent); border-radius: 7px;
-    display: grid; place-items: center;
-    box-shadow: 0 0 14px var(--accent-glow); flex-shrink: 0;
-  }
-  .logo-mark svg { width: 14px; height: 14px; fill: #000; }
-  .logo-text { font-size: 15px; font-weight: 500; letter-spacing: -0.3px; }
-  .logo-text span { color: var(--accent); }
-  .sidebar-section { padding: 20px 14px 6px; }
-  .sidebar-label {
-    font-size: 9.5px; font-weight: 500; letter-spacing: 1.4px;
-    text-transform: uppercase; color: var(--text-tertiary);
-    padding: 0 10px; margin-bottom: 6px;
-  }
-  .nav-item {
-    display: flex; align-items: center; gap: 11px;
-    padding: 9px 10px; border-radius: var(--radius-sm);
-    color: var(--text-secondary); text-decoration: none;
-    font-size: 13.5px; cursor: pointer;
-    transition: all 0.2s; position: relative; margin-bottom: 2px;
-  }
-  .nav-item:hover { background: var(--bg-3); color: var(--text-primary); }
-  .nav-item.active { background: var(--accent-subtle); color: var(--text-primary); }
-  .nav-item.active::before {
-    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-    width: 2.5px; height: 60%; background: var(--accent); border-radius: 0 3px 3px 0;
-    box-shadow: 0 0 8px var(--accent-glow);
-  }
-  .nav-icon {
-    width: 32px; height: 32px; border-radius: 7px; background: var(--bg-3);
-    display: grid; place-items: center; flex-shrink: 0;
-  }
-  .nav-item.active .nav-icon { background: var(--accent-dim); }
-  .nav-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .nav-badge {
-    margin-left: auto; font-size: 10px; font-weight: 500;
-    background: var(--accent-dim); color: var(--accent);
-    border-radius: 20px; padding: 1px 7px;
-  }
-  .sidebar-spacer { flex: 1; }
-  .sidebar-user {
-    padding: 14px; border-top: 1px solid var(--border);
-    display: flex; align-items: center; gap: 10px;
-  }
-  .user-avatar {
-    width: 32px; height: 32px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), #000);
-    display: grid; place-items: center; font-size: 12px; font-weight: 600; color: #fff;
-    flex-shrink: 0; box-shadow: 0 0 10px var(--accent-glow);
-  }
-  .user-info { flex: 1; min-width: 0; }
-  .user-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .user-role { font-size: 11px; color: var(--text-secondary); }
-
-  /* ─── Topbar ──────────────────────────────────────────── */
-  .topbar {
-    background: var(--bg-1); border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 16px; padding: 0 28px;
-  }
-  .topbar-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
-  .topbar-breadcrumb .crumb-active { color: var(--text-primary); font-weight: 500; }
-  .crumb-sep { color: var(--text-tertiary); font-size: 11px; }
-  .topbar-spacer { flex: 1; }
-  .topbar-actions { display: flex; align-items: center; gap: 10px; }
-  .tb-btn {
-    width: 34px; height: 34px; border-radius: var(--radius-sm);
-    background: var(--bg-3); border: 1px solid var(--border);
-    display: grid; place-items: center; cursor: pointer;
-    color: var(--text-secondary); transition: all 0.2s; position: relative;
-  }
-  .tb-btn:hover { background: var(--bg-4); color: var(--text-primary); border-color: var(--border-bright); }
-  .tb-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .notif-dot {
-    position: absolute; top: 6px; right: 6px; width: 6px; height: 6px;
-    background: var(--accent); border-radius: 50%; border: 1.5px solid var(--bg-1);
-    box-shadow: 0 0 6px var(--accent-glow);
-  }
-  .tb-primary {
-    display: flex; align-items: center; gap: 7px;
-    padding: 0 14px; height: 34px; border-radius: var(--radius-sm);
-    background: var(--accent); color: #000; font-size: 13px; font-weight: 600;
-    border: none; cursor: pointer; box-shadow: 0 0 16px var(--accent-glow);
-    transition: all 0.3s; letter-spacing: -0.2px;
-  }
-  .tb-primary:hover { filter: brightness(1.1); box-shadow: 0 0 24px var(--accent-glow); }
-  .tb-primary svg { width: 13px; height: 13px; stroke: #000; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-  /* ─── Main ────────────────────────────────────────────── */
-  .main {
-    background: var(--bg-0); overflow-y: auto;
-    padding: 32px 36px; display: flex; flex-direction: column; gap: 28px;
-  }
-
-  /* ─── Page header ─────────────────────────────────────── */
-  .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
-  .page-eyebrow { font-size: 10.5px; font-weight: 500; letter-spacing: 1.8px; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
-  .page-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 38px; font-weight: 300; letter-spacing: -1.5px; line-height: 1.0; }
-  .page-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 8px; max-width: 420px; line-height: 1.6; }
-  .page-header-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
-  .btn-ghost {
-    display: flex; align-items: center; gap: 6px;
-    padding: 8px 14px; border-radius: var(--radius-sm);
-    background: transparent; border: 1px solid var(--border);
-    color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s;
-  }
-  .btn-ghost:hover { background: var(--bg-3); color: var(--text-primary); border-color: var(--border-bright); }
-  .btn-ghost svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-
-  /* ─── Stats grid ──────────────────────────────────────── */
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-  .stat-card {
-    background: var(--bg-1); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 22px 22px 20px;
-    position: relative; overflow: hidden; transition: border-color 0.2s, transform 0.2s;
-  }
+  .stat-card { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 22px; position: relative; overflow: hidden; transition: all 0.2s; }
   .stat-card:hover { border-color: var(--border-bright); transform: translateY(-1px); }
   .stat-card.highlight { border-color: var(--accent-dim); background: var(--accent-subtle); }
-  .stat-card.highlight::after {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: var(--accent); box-shadow: 0 0 10px var(--accent-glow);
-  }
-  .stat-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .stat-card.highlight::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+  .stat-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
   .stat-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
-  .stat-value { font-size: 30px; font-weight: 300; letter-spacing: -1.5px; line-height: 1; font-family: 'DM Mono', monospace; }
+  .stat-value { font-size: 32px; font-weight: 300; color: var(--text-primary); font-family: 'DM Mono', monospace; line-height: 1; }
   .stat-sub { font-size: 11px; margin-top: 8px; color: var(--text-secondary); }
 
-  /* ─── Content grid ────────────────────────────────────── */
-  .content-grid { display: grid; grid-template-columns: 1fr 340px; gap: 14px; align-items: start; }
+  .content-layout { display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
+  @media(max-width:1100px){ .content-layout { grid-template-columns: 1fr; } }
 
-  /* ─── Panel ───────────────────────────────────────────── */
   .panel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .panel-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 22px 16px; border-bottom: 1px solid var(--border);
-  }
-  .panel-title { font-size: 13.5px; font-weight: 500; letter-spacing: -0.2px; }
-  .panel-title-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-  .panel-action { font-size: 12px; color: var(--accent); cursor: pointer; transition: opacity 0.2s; text-decoration: none; }
-  .panel-action:hover { opacity: 0.7; }
+  .panel-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+  .panel-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
 
-  /* ─── Status badge ────────────────────────────────────── */
-  .status-badge {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-    letter-spacing: 0.5px; text-transform: uppercase; border: 1px solid;
-  }
-  .status-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-  .badge-ready     { color: var(--ready);    border-color: var(--ready);    background: rgba(57,255,130,.10); }
-  .badge-needs     { color: var(--needs);    border-color: var(--needs);    background: rgba(255,214,0,.10); }
-  .badge-not-ready { color: var(--notready); border-color: var(--notready); background: rgba(255,77,109,.10); }
-
-  /* ─── Score card ──────────────────────────────────────── */
-  .score-card {
-    padding: 28px 28px 24px;
-    display: flex; align-items: center; gap: 28px;
-  }
-  .score-ring-wrap { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
-  .score-ring-wrap svg { transform: rotate(-90deg); }
-  .ring-track { fill: none; stroke: var(--bg-3); stroke-width: 9; }
-  .ring-arc   { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1), stroke 0.4s; }
-  .ring-center {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-  }
-  .ring-pct  { font-family: 'DM Mono', monospace; font-size: 1.65rem; font-weight: 400; line-height: 1; }
-  .ring-word { font-size: .65rem; color: var(--text-secondary); letter-spacing: .12em; margin-top: 2px; }
-
-  .score-info { flex: 1; }
-  .score-status-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-  .score-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
-
-  /* ─── Progress bar ────────────────────────────────────── */
-  .prog-bar-wrap { margin-top: 14px; }
-  .prog-bar-label {
-    display: flex; justify-content: space-between;
-    font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;
-  }
-  .prog-bar-track {
-    height: 6px; background: var(--bg-3); border-radius: 20px; overflow: hidden;
-  }
-  .prog-bar-fill {
-    height: 100%; border-radius: 20px;
-    transition: width 1s cubic-bezier(.4,0,.2,1), background 0.4s;
-  }
-
-  /* ─── Missing docs panel ──────────────────────────────── */
-  .missing-list { padding: 6px 0; }
-  .missing-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 22px; border-bottom: 1px solid var(--border);
-    transition: background 0.2s;
-  }
-  .missing-item:last-child { border-bottom: none; }
-  .missing-item:hover { background: var(--bg-2); }
-  .missing-icon {
-    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
-    display: grid; place-items: center;
-  }
-  .icon-missing  { background: rgba(255,77,109,.12); }
-  .icon-outdated { background: rgba(255,214,0,.12); }
-  .icon-missing svg  { stroke: var(--notready); }
-  .icon-outdated svg { stroke: var(--needs); }
-  .missing-icon svg { width: 15px; height: 15px; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .missing-doc-name { font-size: 13px; font-weight: 500; }
-  .missing-doc-type { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
-  .missing-tag {
-    margin-left: auto; font-size: 10px; font-weight: 500; padding: 2px 9px;
-    border-radius: 20px; text-transform: uppercase; letter-spacing: 0.4px;
-  }
-  .tag-missing  { background: rgba(255,77,109,.12);  color: var(--notready); }
-  .tag-outdated { background: rgba(255,214,0,.12);   color: var(--needs); }
-
-  /* ─── Checklist table ─────────────────────────────────── */
+  /* Checklist table */
   .checklist-table { width: 100%; border-collapse: collapse; }
-  .checklist-table thead tr { border-bottom: 1px solid var(--border); }
-  .checklist-table th {
-    text-align: left; padding: 10px 22px;
-    font-size: 10.5px; color: var(--text-tertiary);
-    letter-spacing: .1em; text-transform: uppercase; font-weight: 500;
+  .checklist-table th { text-align: left; padding: 10px 24px; font-size: 10.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .1em; font-weight: 500; border-bottom: 1px solid var(--border); }
+  .checklist-table td { padding: 13px 24px; font-size: 13px; vertical-align: middle; border-bottom: 1px solid var(--border); }
+  .checklist-table tr:last-child td { border-bottom: none; }
+  .checklist-table tr:hover td { background: var(--bg-2); }
+
+  .status-pill { font-size: 10.5px; font-weight: 600; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.3px; }
+  .pill-uploaded { background: rgba(57,255,130,0.1);  color: #39FF82; }
+  .pill-missing  { background: rgba(255,77,109,0.1);  color: #FF4D6D; }
+  .pill-outdated { background: rgba(255,214,0,0.1);   color: #FFD600; }
+
+  /* Upload button */
+  .btn-upload {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--radius-sm);
+    background: var(--accent); color: #000;
+    font-size: 11.5px; font-weight: 600; border: none;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 0 10px var(--accent-glow);
+    text-decoration: none;
   }
-  .checklist-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
-  .checklist-table tbody tr:last-child { border-bottom: none; }
-  .checklist-table tbody tr:hover { background: var(--bg-2); }
-  .checklist-table td { padding: 13px 22px; font-size: 13px; vertical-align: middle; }
-  .check-icon { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; }
-  .check-icon svg { width: 12px; height: 12px; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
-  .ci-uploaded { background: rgba(57,255,130,.12); }
-  .ci-uploaded svg { stroke: var(--ready); }
-  .ci-missing  { background: rgba(255,77,109,.12); }
-  .ci-missing svg  { stroke: var(--notready); }
-  .ci-outdated { background: rgba(255,214,0,.12); }
-  .ci-outdated svg { stroke: var(--needs); }
+  .btn-upload:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-upload svg { width: 11px; height: 11px; stroke: #000; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
-  .row-status {
-    font-size: 10.5px; font-weight: 500; padding: 3px 9px;
-    border-radius: 20px; letter-spacing: 0.3px;
-  }
-  .rs-uploaded { background: rgba(57,255,130,.10); color: var(--ready); }
-  .rs-missing  { background: rgba(255,77,109,.10); color: var(--notready); }
-  .rs-outdated { background: rgba(255,214,0,.10);  color: var(--needs); }
+  /* Progress bar */
+  .prog-track { height: 6px; background: var(--bg-3); border-radius: 20px; overflow: hidden; margin: 8px 0; }
+  .prog-fill  { height: 100%; border-radius: 20px; transition: width 1s ease; }
 
-  /* ─── Donut chart ─────────────────────────────────────── */
-  .donut-wrap {
-    padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 16px;
-  }
-  .donut-canvas-wrap { position: relative; width: 160px; height: 160px; }
-  .donut-center-label {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; pointer-events: none;
-  }
-  .donut-center-num  { font-family: 'DM Mono', monospace; font-size: 1.5rem; font-weight: 400; line-height: 1; }
-  .donut-center-word { font-size: .65rem; color: var(--text-secondary); letter-spacing: .1em; margin-top: 2px; }
-  .donut-legend { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-  .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-  .legend-label { flex: 1; color: var(--text-secondary); }
-  .legend-val { font-family: 'DM Mono', monospace; font-size: 12px; }
+  /* Status badge */
+  .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; border: 1px solid; }
+  .status-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 
-  /* ─── Skeleton loader ─────────────────────────────────── */
-  .skel {
-    background: linear-gradient(90deg, var(--bg-2) 25%, var(--bg-3) 50%, var(--bg-2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.4s infinite;
-    border-radius: 6px;
-  }
-  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-  /* ─── Animations ──────────────────────────────────────── */
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-  .stats-grid  { animation: fadeUp 0.5s ease 0.05s both; }
-  .content-grid { animation: fadeUp 0.5s ease 0.12s both; }
-
-  /* ─── Error state ─────────────────────────────────────── */
-  .error-banner {
-    background: rgba(255,77,109,.08); border: 1px solid rgba(255,77,109,.25);
-    border-radius: var(--radius-sm); padding: 12px 16px;
-    font-size: 13px; color: var(--notready); display: none;
-  }
-
-  /* ─── Mini progress (sidebar projects reuse) ──────────── */
-  .mini-progress { height: 3px; background: var(--bg-3); border-radius: 20px; overflow: hidden; margin-top: 6px; }
-  .mini-progress-fill { height: 100%; background: var(--accent); border-radius: 20px; box-shadow: 0 0 6px var(--accent-glow); }
-
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
+  /* Modal */
+  .upload-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; place-items: center; z-index: 6000; backdrop-filter: blur(6px); }
+  .upload-modal.open { display: grid; }
+  .upload-modal-box { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; width: 100%; max-width: 440px; }
+  .upload-modal-title { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+  .upload-modal-doc { font-size: 12px; color: var(--accent); margin-bottom: 24px; }
+  .form-label { font-size: 10.5px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block; }
+  .form-control { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: #fff; font-size: 13px; margin-bottom: 18px; }
+  .form-control:focus { border-color: var(--accent); outline: none; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+  .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; }
+  .btn-confirm { background: var(--accent); color: #000; border: none; padding: 8px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; }
 </style>
-</head>
-<body data-page="submission_validation">
+{% endblock %}
 
-<div class="shell">
+{% block content %}
 
-  <!-- ══════════════════ SIDEBAR (unchanged) ══════════════════ -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 14 14"><path d="M2 12 L7 2 L12 12 M4 8.5 H10" stroke="#000" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">Quality Control</div>
+    <h1 class="page-title">Readiness &amp; Compliance</h1>
+    <p class="page-subtitle">Track required document submissions, detect gaps, and calculate project readiness for authority approval.</p>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-row" id="statsRow">
+  <div class="stat-card highlight">
+    <div class="stat-label">Readiness Score <span class="stat-dot" id="statDot"></span></div>
+    <div class="stat-value" id="statScore">—</div>
+    <div class="stat-sub" id="statStatus">Loading…</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Required Docs</div>
+    <div class="stat-value" id="statTotal">—</div>
+    <div class="stat-sub">mandatory for submission</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Uploaded</div>
+    <div class="stat-value" id="statUploaded" style="color:#39FF82">—</div>
+    <div class="stat-sub">verified &amp; current</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Missing / Outdated</div>
+    <div class="stat-value" id="statMissing" style="color:#FF4D6D">—</div>
+    <div class="stat-sub">action required</div>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="content-layout">
+
+  <!-- Left: checklist -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Document Checklist</div>
+        <div class="panel-sub">Project #{{ project_id }} · Upload missing documents below</div>
       </div>
-      <span class="logo-text">Build<span>Smart</span></span>
+      <span class="status-badge" id="heroBadge" style="color:#FF4D6D;border-color:#FF4D6D;background:rgba(255,77,109,0.1);">Loading</span>
     </div>
+    <table class="checklist-table">
+      <thead>
+        <tr>
+          <th style="width:36px;"></th>
+          <th>Document</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="checklistBody">
+        <tr><td colspan="4" style="padding:28px 24px;text-align:center;color:var(--text-secondary);font-size:12px;">Loading checklist…</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-label">Workspace</div>
+  <!-- Right: progress + missing -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
 
-      <a class="nav-item" href="#">
-        <div class="nav-icon">
-          <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-        </div>
-        Approval Flow
-        <span class="nav-badge">3</span>
-      </a>
-
-      <a class="nav-item" href="#">
-        <div class="nav-icon">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        </div>
-        Document Management
-        <span class="nav-badge">12</span>
-      </a>
-
-      <a class="nav-item" href="#">
-        <div class="nav-icon">
-          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        </div>
-        Stakeholder Collab
-        <span class="nav-badge">5</span>
-      </a>
-
-      <a class="nav-item active" href="#">
-        <div class="nav-icon">
-          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        </div>
-        Compliance Tracker
-      </a>
-
-      <a class="nav-item" href="#">
-        <div class="nav-icon">
-          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        </div>
-        Project Insights
-      </a>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Projects</div>
-      <a class="nav-item" href="#">
-        <div class="nav-icon">
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        </div>
-        All Projects
-      </a>
-      <a class="nav-item" href="#">
-        <div class="nav-icon">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        </div>
-        Pending Review
-        <span class="nav-badge">7</span>
-      </a>
-    </div>
-
-    <div class="sidebar-spacer"></div>
-
-    <div class="sidebar-user">
-      <div class="user-avatar">AR</div>
-      <div class="user-info">
-        <div class="user-name">Alex Rivera</div>
-        <div class="user-role">Project Lead</div>
+    <!-- Progress -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Readiness Progress</div>
       </div>
-    </div>
-  </aside>
-
-  <!-- ══════════════════ TOPBAR (unchanged) ══════════════════ -->
-  <header class="topbar">
-    <div class="topbar-breadcrumb">
-      <span>BuildSmart</span>
-      <span class="crumb-sep">›</span>
-      <span class="crumb-active">Compliance Tracker</span>
-    </div>
-    <div class="topbar-spacer"></div>
-    <div class="topbar-actions">
-      <button class="tb-btn" title="Search">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </button>
-      <button class="tb-btn" title="Notifications">
-        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-        <span class="notif-dot"></span>
-      </button>
-      <button class="tb-btn" title="Settings">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-      </button>
-      <button class="tb-primary" onclick="refreshData()">
-        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-        Refresh
-      </button>
-    </div>
-  </header>
-
-  <!-- ══════════════════════ MAIN ═════════════════════════════ -->
-  <main class="main">
-
-    <!-- Error banner -->
-    <div class="error-banner" id="errorBanner">
-      Failed to load compliance data. Check your network and try again.
-    </div>
-
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="page-title-group">
-        <div class="page-eyebrow">Quality Control</div>
-        <h1 class="page-title">Readiness &amp; Compliance</h1>
-        <p class="page-subtitle">Track required document submissions, detect gaps, and calculate project readiness for authority approval.</p>
-      </div>
-      <div class="page-header-actions">
-        <button class="btn-ghost">
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export
-        </button>
-        <button class="btn-ghost" onclick="refreshData()">
-          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-          Refresh
-        </button>
+      <div style="padding:22px 24px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);margin-bottom:6px;">
+          <span id="progLabel">0 uploaded</span>
+          <span id="progTotal">of 6</span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill" id="progFill" style="width:0%;background:#FF4D6D;"></div>
+        </div>
+        <div style="margin-top:12px;font-size:11.5px;color:var(--text-secondary);line-height:1.7;">
+          Threshold: <strong style="color:var(--text-primary)">100%</strong> required.<br>
+          <span id="thresholdNote">—</span>
+        </div>
       </div>
     </div>
 
-    <!-- ── Stats row ── -->
-    <div class="stats-grid">
-      <div class="stat-card highlight">
-        <div class="stat-label">Readiness Score <span class="stat-dot"></span></div>
-        <div class="stat-value" id="statScore">
-          <span class="skel" style="display:inline-block;width:60px;height:30px;"></span>
+    <!-- Action required -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Action Required</div>
+          <div class="panel-sub" id="missingCount">Loading…</div>
         </div>
-        <div class="stat-sub" id="statStatus">Loading…</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Required Docs</div>
-        <div class="stat-value" id="statTotal">—</div>
-        <div class="stat-sub">mandatory for submission</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Uploaded</div>
-        <div class="stat-value" id="statUploaded" style="color:var(--ready)">—</div>
-        <div class="stat-sub">verified &amp; current</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Missing / Outdated</div>
-        <div class="stat-value" id="statMissing" style="color:var(--notready)">—</div>
-        <div class="stat-sub">action required</div>
+      <div id="missingList" style="padding:8px 0;">
+        <div style="padding:20px 24px;font-size:12px;color:var(--text-secondary);">Loading…</div>
       </div>
     </div>
 
-    <!-- ── Content grid ── -->
-    <div class="content-grid">
+  </div>
+</div>
 
-      <!-- LEFT column -->
-      <div style="display:flex;flex-direction:column;gap:14px;">
-
-        <!-- Readiness score card -->
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">Project Readiness</div>
-              <div class="panel-title-sub" id="panelProjectId">Project —</div>
-            </div>
-            <span id="heroBadge" class="status-badge badge-not-ready">Loading</span>
-          </div>
-          <div class="score-card">
-            <!-- Ring -->
-            <div class="score-ring-wrap">
-              <svg viewBox="0 0 120 120" width="120" height="120">
-                <circle class="ring-track" cx="60" cy="60" r="50"/>
-                <circle class="ring-arc" id="ringArc" cx="60" cy="60" r="50"
-                  stroke="var(--notready)"
-                  stroke-dasharray="314"
-                  stroke-dashoffset="314"/>
-              </svg>
-              <div class="ring-center">
-                <div class="ring-pct" id="ringPct">0%</div>
-                <div class="ring-word">READY</div>
-              </div>
-            </div>
-
-            <!-- Score info -->
-            <div class="score-info">
-              <div class="score-status-row">
-                <span id="infoStatus" class="status-badge badge-not-ready">—</span>
-              </div>
-              <div class="score-label">Document Readiness Progress</div>
-              <div class="prog-bar-wrap">
-                <div class="prog-bar-label">
-                  <span id="progUploaded">0 uploaded</span>
-                  <span id="progTotal">of 6</span>
-                </div>
-                <div class="prog-bar-track">
-                  <div class="prog-bar-fill" id="progFill" style="width:0%;background:var(--notready);"></div>
-                </div>
-              </div>
-              <div style="margin-top:14px;font-size:11.5px;color:var(--text-secondary);line-height:1.7;">
-                Threshold: <strong style="color:var(--text-primary)">100%</strong> required for submission approval.<br>
-                <span id="thresholdNote">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Full Checklist Table -->
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">Document Checklist</div>
-              <div class="panel-title-sub">All required compliance documents</div>
-            </div>
-            <a class="panel-action" href="#">Upload +</a>
-          </div>
-          <table class="checklist-table">
-            <thead>
-              <tr>
-                <th style="width:36px;"></th>
-                <th>Document Type</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="checklistBody">
-              <!-- filled by JS -->
-              <tr>
-                <td colspan="3" style="padding:28px 22px;text-align:center;color:var(--text-secondary);font-size:12px;">
-                  <div class="skel" style="height:14px;margin-bottom:10px;border-radius:4px;"></div>
-                  <div class="skel" style="height:14px;margin-bottom:10px;border-radius:4px;width:80%;margin-inline:auto;"></div>
-                  <div class="skel" style="height:14px;border-radius:4px;width:65%;margin-inline:auto;"></div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
+<!-- ── Upload Modal ── -->
+<div class="upload-modal" id="uploadModal">
+  <div class="upload-modal-box">
+    <div class="upload-modal-title">Upload Document</div>
+    <div class="upload-modal-doc" id="modalDocName"></div>
+    <form method="POST" action="{{ url_for('document.compliance_upload') }}" enctype="multipart/form-data">
+      <input type="hidden" name="document_type" id="modalDocType">
+      <input type="hidden" name="project_id" value="{{ project_id }}">
+      <label class="form-label">Select File (PDF / CAD / IMG)</label>
+      <input type="file" name="file" class="form-control" required>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-confirm">Upload &amp; Verify</button>
       </div>
-
-      <!-- RIGHT column -->
-      <div style="display:flex;flex-direction:column;gap:14px;">
-
-        <!-- Donut chart -->
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">Compliance Breakdown</div>
-              <div class="panel-title-sub">Required documents overview</div>
-            </div>
-          </div>
-          <div class="donut-wrap">
-            <div class="donut-canvas-wrap">
-              <canvas id="donutChart" width="160" height="160"></canvas>
-              <div class="donut-center-label">
-                <div class="donut-center-num" id="donutCenterNum">—</div>
-                <div class="donut-center-word">of 6</div>
-              </div>
-            </div>
-            <div class="donut-legend">
-              <div class="legend-row">
-                <div class="legend-dot" style="background:var(--ready);"></div>
-                <div class="legend-label">Uploaded</div>
-                <div class="legend-val" id="legendUploaded">—</div>
-              </div>
-              <div class="legend-row">
-                <div class="legend-dot" style="background:var(--notready);"></div>
-                <div class="legend-label">Missing</div>
-                <div class="legend-val" id="legendMissing">—</div>
-              </div>
-              <div class="legend-row">
-                <div class="legend-dot" style="background:var(--needs);"></div>
-                <div class="legend-label">Outdated</div>
-                <div class="legend-val" id="legendOutdated">—</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Missing documents panel -->
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">Action Required</div>
-              <div class="panel-title-sub" id="missingCount">Loading missing docs…</div>
-            </div>
-          </div>
-          <div class="missing-list" id="missingList">
-            <div style="padding:20px 22px;font-size:12px;color:var(--text-secondary);">
-              <div class="skel" style="height:12px;margin-bottom:8px;border-radius:4px;"></div>
-              <div class="skel" style="height:12px;border-radius:4px;width:70%;"></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </main>
+    </form>
+  </div>
 </div>
 
 <script>
-  // ── Config ────────────────────────────────────────────────────────────────
-  // In Flask this would be: const PROJECT_ID = {{ project_id }};
-  // For demo/standalone we read from URL param or default to 1.
-  const PROJECT_ID = (new URLSearchParams(window.location.search).get('project_id')) || '{{ project_id | default(1) }}';
-  const API_URL    = `/compliance/api/${PROJECT_ID}`;
+  var PROJECT_ID = {{ project_id }};
 
-  // ── Chart instance ────────────────────────────────────────────────────────
-  let donutChart = null;
-
-  // ── Status helpers ────────────────────────────────────────────────────────
-  function statusClass(status) {
-    if (status === 'READY_FOR_APPROVAL') return 'badge-ready';
-    if (status === 'NEEDS_WORK')         return 'badge-needs';
-    return 'badge-not-ready';
+  function openUploadModal(docType) {
+    document.getElementById('modalDocName').textContent = docType;
+    document.getElementById('modalDocType').value = docType;
+    document.getElementById('uploadModal').classList.add('open');
   }
 
-  function statusLabel(status) {
-    if (status === 'READY_FOR_APPROVAL') return 'Ready for Approval';
-    if (status === 'NEEDS_WORK')         return 'Needs Work';
+  function closeModal() {
+    document.getElementById('uploadModal').classList.remove('open');
+  }
+
+  document.getElementById('uploadModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  function statusColor(s) {
+    if (s === 'READY_FOR_APPROVAL') return '#39FF82';
+    if (s === 'NEEDS_WORK') return '#FFD600';
+    return '#FF4D6D';
+  }
+  function statusLabel(s) {
+    if (s === 'READY_FOR_APPROVAL') return 'Ready for Approval';
+    if (s === 'NEEDS_WORK') return 'Needs Work';
     return 'Not Ready';
   }
 
-  function statusColor(status) {
-    if (status === 'READY_FOR_APPROVAL') return 'var(--ready)';
-    if (status === 'NEEDS_WORK')         return 'var(--needs)';
-    return 'var(--notready)';
-  }
+  function loadData() {
+    fetch('/compliance/api/' + PROJECT_ID)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var score  = data.readiness_score;
+        var status = data.status;
+        var color  = statusColor(status);
+        var label  = statusLabel(status);
 
-  // ── Render ────────────────────────────────────────────────────────────────
-  function render(data) {
-    const score   = data.readiness_score;
-    const status  = data.status;
-    const total   = data.total_required;
-    const up      = data.uploaded;
-    const missing = data.missing || [];
-    const checklist = data.checklist || [];
-    const color   = statusColor(status);
+        // Stats
+        document.getElementById('statScore').innerHTML = score + '<span style="font-size:16px;color:var(--text-secondary);font-family:sans-serif">%</span>';
+        document.getElementById('statScore').style.color = color;
+        document.getElementById('statDot').style.background = color;
+        document.getElementById('statDot').style.boxShadow = '0 0 6px ' + color;
+        document.getElementById('statStatus').textContent = label;
+        document.getElementById('statTotal').textContent  = data.total_required;
+        document.getElementById('statUploaded').textContent = data.uploaded;
+        document.getElementById('statMissing').textContent  = data.total_required - data.uploaded;
 
-    // ── Stats row
-    document.getElementById('statScore').innerHTML    = `${score}<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">%</span>`;
-    document.getElementById('statStatus').textContent = statusLabel(status);
-    document.getElementById('statTotal').textContent  = total;
-    document.getElementById('statUploaded').textContent = up;
-    document.getElementById('statMissing').textContent  = total - up;
+        // Badge
+        var badge = document.getElementById('heroBadge');
+        badge.textContent = label;
+        badge.style.color = color;
+        badge.style.borderColor = color;
+        badge.style.background = color === '#39FF82' ? 'rgba(57,255,130,0.1)' : color === '#FFD600' ? 'rgba(255,214,0,0.1)' : 'rgba(255,77,109,0.1)';
 
-    // ── Ring
-    const circumference = 314;
-    const offset = circumference - (circumference * score / 100);
-    const arc = document.getElementById('ringArc');
-    arc.setAttribute('stroke', color);
-    setTimeout(() => { arc.style.strokeDashoffset = offset; }, 100);
-    document.getElementById('ringPct').textContent = `${score}%`;
-    document.getElementById('ringPct').style.color = color;
+        // Progress bar
+        document.getElementById('progFill').style.width = score + '%';
+        document.getElementById('progFill').style.background = color;
+        document.getElementById('progLabel').textContent = data.uploaded + ' uploaded';
+        document.getElementById('progTotal').textContent = 'of ' + data.total_required;
+        var rem = data.total_required - data.uploaded;
+        document.getElementById('thresholdNote').innerHTML = rem > 0
+          ? '<strong style="color:' + color + '">' + rem + ' document(s)</strong> still needed.'
+          : '<strong style="color:#39FF82">All documents verified.</strong>';
 
-    // ── Hero badge
-    ['heroBadge','infoStatus'].forEach(id => {
-      const el = document.getElementById(id);
-      el.className = `status-badge ${statusClass(status)}`;
-      el.textContent = statusLabel(status);
-    });
-
-    // ── Panel subtitle
-    document.getElementById('panelProjectId').textContent = `Project #${data.project_id}`;
-
-    // ── Progress bar
-    document.getElementById('progFill').style.width      = `${score}%`;
-    document.getElementById('progFill').style.background = color;
-    document.getElementById('progUploaded').textContent  = `${up} uploaded`;
-    document.getElementById('progTotal').textContent     = `of ${total}`;
-
-    const remaining = total - up;
-    document.getElementById('thresholdNote').innerHTML =
-      remaining > 0
-        ? `<strong style="color:${color}">${remaining} document${remaining > 1 ? 's' : ''}</strong> still needed before submission.`
-        : `<strong style="color:var(--ready)">All documents verified.</strong> Ready to submit.`;
-
-    // ── Checklist table
-    const tbody = document.getElementById('checklistBody');
-    if (checklist.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="3" style="padding:20px 22px;color:var(--text-secondary);font-size:12px;text-align:center;">No checklist data.</td></tr>`;
-    } else {
-      tbody.innerHTML = checklist.map(item => {
-        const s = item.status; // 'Uploaded' | 'Missing' | 'Outdated'
-        const iconClass = s === 'Uploaded' ? 'ci-uploaded' : s === 'Outdated' ? 'ci-outdated' : 'ci-missing';
-        const rowClass  = s === 'Uploaded' ? 'rs-uploaded' : s === 'Outdated' ? 'rs-outdated' : 'rs-missing';
-        const iconPath  = s === 'Uploaded'
-          ? '<polyline points="20 6 9 17 4 12"/>'
-          : s === 'Outdated'
-            ? '<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
-            : '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
-        return `
-          <tr>
-            <td>
-              <div class="check-icon ${iconClass}">
-                <svg viewBox="0 0 24 24">${iconPath}</svg>
-              </div>
-            </td>
-            <td style="font-weight:500;">${item.document_type}</td>
-            <td><span class="row-status ${rowClass}">${s}</span></td>
-          </tr>`;
-      }).join('');
-    }
-
-    // ── Missing panel
-    const outdatedCount = checklist.filter(i => i.status === 'Outdated').length;
-    document.getElementById('missingCount').textContent =
-      `${missing.length} document${missing.length !== 1 ? 's' : ''} need attention`;
-
-    const missingList = document.getElementById('missingList');
-    if (missing.length === 0) {
-      missingList.innerHTML = `<div style="padding:20px 22px;font-size:12px;color:var(--ready);display:flex;align-items:center;gap:8px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        All required documents are uploaded and current.
-      </div>`;
-    } else {
-      missingList.innerHTML = checklist
-        .filter(i => i.status !== 'Uploaded')
-        .map(item => {
-          const isOutdated = item.status === 'Outdated';
-          return `
-            <div class="missing-item">
-              <div class="missing-icon ${isOutdated ? 'icon-outdated' : 'icon-missing'}">
-                <svg viewBox="0 0 24 24">${isOutdated
-                  ? '<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
-                  : '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><line x1="12" y1="10" x2="12" y2="14"/><line x1="12" y1="18" x2="12.01" y2="18"/>'}
-                </svg>
-              </div>
-              <div>
-                <div class="missing-doc-name">${item.document_type}</div>
-                <div class="missing-doc-type">${isOutdated ? 'Document outdated — re-upload required' : 'Not uploaded yet'}</div>
-              </div>
-              <span class="missing-tag ${isOutdated ? 'tag-outdated' : 'tag-missing'}">${item.status}</span>
-            </div>`;
+        // Checklist
+        var tbody = document.getElementById('checklistBody');
+        tbody.innerHTML = data.checklist.map(function(item) {
+          var s   = item.status;
+          var c   = s === 'Uploaded' ? '#39FF82' : s === 'Outdated' ? '#FFD600' : '#FF4D6D';
+          var ibg = s === 'Uploaded' ? 'rgba(57,255,130,0.1)' : s === 'Outdated' ? 'rgba(255,214,0,0.1)' : 'rgba(255,77,109,0.1)';
+          var pill = s === 'Uploaded' ? 'pill-uploaded' : s === 'Outdated' ? 'pill-outdated' : 'pill-missing';
+          var icon = s === 'Uploaded' ? '&#10003;' : s === 'Outdated' ? '!' : '&#10007;';
+          var action = s !== 'Uploaded'
+            ? '<button class="btn-upload" onclick="openUploadModal(\'' + item.document_type.replace(/'/g, "\\'") + '\')">'
+              + '<svg viewBox="0 0 24 24"><line x1="12" y1="15" x2="12" y2="3"/><polyline points="17 8 12 3 7 8"/><line x1="20" y1="21" x2="4" y2="21"/></svg>'
+              + 'Upload</button>'
+            : '<span style="font-size:11px;color:var(--text-tertiary);">Verified</span>';
+          return '<tr>'
+            + '<td><div style="width:22px;height:22px;border-radius:6px;background:' + ibg + ';display:grid;place-items:center;color:' + c + ';font-weight:700;font-size:12px;">' + icon + '</div></td>'
+            + '<td style="font-weight:500;">' + item.document_type + '</td>'
+            + '<td><span class="status-pill ' + pill + '">' + s + '</span></td>'
+            + '<td>' + action + '</td>'
+            + '</tr>';
         }).join('');
-    }
 
-    // ── Donut chart
-    const uploadedCount = up;
-    const missingCount2 = checklist.filter(i => i.status === 'Missing').length;
-    const outdatedCount2 = checklist.filter(i => i.status === 'Outdated').length;
-
-    document.getElementById('donutCenterNum').textContent = up;
-    document.getElementById('legendUploaded').textContent = uploadedCount;
-    document.getElementById('legendMissing').textContent  = missingCount2;
-    document.getElementById('legendOutdated').textContent = outdatedCount2;
-
-    const ctx = document.getElementById('donutChart').getContext('2d');
-    const chartData = {
-      datasets: [{
-        data: [uploadedCount, missingCount2, outdatedCount2],
-        backgroundColor: [
-          'rgba(57,255,130,0.85)',
-          'rgba(255,77,109,0.85)',
-          'rgba(255,214,0,0.85)',
-        ],
-        borderColor: 'transparent',
-        borderWidth: 0,
-        hoverOffset: 4,
-      }],
-      labels: ['Uploaded', 'Missing', 'Outdated'],
-    };
-
-    if (donutChart) {
-      donutChart.data = chartData;
-      donutChart.update();
-    } else {
-      donutChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: chartData,
-        options: {
-          cutout: '72%',
-          plugins: { legend: { display: false }, tooltip: {
-            backgroundColor: '#111',
-            titleColor: '#f0f0f0',
-            bodyColor: '#888',
-            borderColor: 'rgba(255,255,255,0.08)',
-            borderWidth: 1,
-            padding: 10,
-          }},
-          animation: { animateRotate: true, duration: 900 },
-        },
+        // Missing list
+        document.getElementById('missingCount').textContent = (data.total_required - data.uploaded) + ' item(s) need attention';
+        var missingItems = data.checklist.filter(function(i) { return i.status !== 'Uploaded'; });
+        var missingList = document.getElementById('missingList');
+        if (missingItems.length === 0) {
+          missingList.innerHTML = '<div style="padding:20px 24px;font-size:12px;color:#39FF82;">&#10003; All documents uploaded and current.</div>';
+        } else {
+          missingList.innerHTML = missingItems.map(function(item) {
+            var isOutdated = item.status === 'Outdated';
+            var c   = isOutdated ? '#FFD600' : '#FF4D6D';
+            var ibg = isOutdated ? 'rgba(255,214,0,0.1)' : 'rgba(255,77,109,0.1)';
+            return '<div style="display:flex;align-items:center;gap:12px;padding:12px 24px;border-bottom:1px solid var(--border);">'
+              + '<div style="flex:1;">'
+              + '<div style="font-size:13px;font-weight:500;">' + item.document_type + '</div>'
+              + '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">' + (isOutdated ? 'Re-upload required' : 'Not uploaded yet') + '</div>'
+              + '</div>'
+              + '<button class="btn-upload" onclick="openUploadModal(\'' + item.document_type.replace(/'/g, "\\'") + '\')">'
+              + '<svg viewBox="0 0 24 24"><line x1="12" y1="15" x2="12" y2="3"/><polyline points="17 8 12 3 7 8"/><line x1="20" y1="21" x2="4" y2="21"/></svg>'
+              + 'Upload</button>'
+              + '</div>';
+          }).join('');
+        }
+      })
+      .catch(function() {
+        document.getElementById('checklistBody').innerHTML = '<tr><td colspan="4" style="padding:20px 24px;color:#FF4D6D;font-size:13px;">Failed to load data.</td></tr>';
       });
-    }
   }
-
-  // ── Fetch data ────────────────────────────────────────────────────────────
-  async function loadData() {
-    document.getElementById('errorBanner').style.display = 'none';
-    try {
-      const res  = await fetch(API_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      render(data);
-    } catch (err) {
-      console.error('Compliance fetch error:', err);
-      document.getElementById('errorBanner').style.display = 'block';
-      // Render demo data so the UI is never blank
-      render({
-        project_id: PROJECT_ID,
-        total_required: 6,
-        uploaded: 4,
-        missing: ['Fire Safety Certificate', 'Zoning Permit'],
-        readiness_score: 66,
-        status: 'NEEDS_WORK',
-        checklist: [
-          { document_type: 'Structural Drawings',       status: 'Uploaded' },
-          { document_type: 'Electrical Plan',           status: 'Uploaded' },
-          { document_type: 'Environmental Clearance',   status: 'Uploaded' },
-          { document_type: 'Zoning Permit',             status: 'Missing'  },
-          { document_type: 'Fire Safety Certificate',   status: 'Missing'  },
-          { document_type: 'Safety Compliance Document',status: 'Outdated' },
-        ],
-      });
-    }
-  }
-
-  function refreshData() { loadData(); }
-
-  // Animate ring on load
-  document.getElementById('ringArc').style.transition = 'stroke-dashoffset 1s cubic-bezier(.4,0,.2,1), stroke 0.4s';
 
   loadData();
 </script>
-</body>
-</html>
+
+{% endblock %}
