@@ -22,20 +22,16 @@
       --text-primary: #f0f0f0;
       --text-secondary: #888;
       --text-tertiary: #444;
-
-      /* Accent per page — default is blue (Identity/Access) */
       --accent: #2979FF;
       --accent-dim: rgba(41,121,255,0.12);
       --accent-glow: rgba(41,121,255,0.35);
       --accent-subtle: rgba(41,121,255,0.06);
-
       --sidebar-w: 260px;
       --topbar-h: 60px;
       --radius: 14px;
       --radius-sm: 8px;
     }
 
-    /* ─── Page themes ───────────────────────────────────── */
     .page-auth      { --accent:#2979FF; --accent-dim:rgba(41,121,255,.12); --accent-glow:rgba(41,121,255,.35); --accent-subtle:rgba(41,121,255,.06); }
     .page-vault     { --accent:#2979FF; --accent-dim:rgba(41,121,255,.12); --accent-glow:rgba(41,121,255,.35); --accent-subtle:rgba(41,121,255,.06); }
     .page-logs      { --accent:#2979FF; --accent-dim:rgba(41,121,255,.12); --accent-glow:rgba(41,121,255,.35); --accent-subtle:rgba(41,121,255,.06); }
@@ -53,7 +49,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ─── Layout shell ──────────────────────────────────── */
     .shell {
       display: grid;
       grid-template-columns: var(--sidebar-w) 1fr;
@@ -107,21 +102,10 @@
 
     .logo-mark svg { width: 14px; height: 14px; fill: none; stroke: #000; stroke-width: 2; stroke-linecap: round; }
 
-    .logo-text {
-      font-size: 15px;
-      font-weight: 500;
-      letter-spacing: -0.3px;
-      color: var(--text-primary);
-    }
+    .logo-text { font-size: 15px; font-weight: 500; letter-spacing: -0.3px; color: var(--text-primary); }
+    .logo-text span { color: var(--accent); transition: color 0.4s; }
 
-    .logo-text span {
-      color: var(--accent);
-      transition: color 0.4s;
-    }
-
-    .sidebar-section {
-      padding: 20px 14px 6px;
-    }
+    .sidebar-section { padding: 20px 14px 6px; }
 
     .sidebar-label {
       font-size: 9.5px;
@@ -149,10 +133,7 @@
       margin-bottom: 2px;
     }
 
-    .nav-item:hover {
-      background: var(--bg-3);
-      color: var(--text-primary);
-    }
+    .nav-item:hover { background: var(--bg-3); color: var(--text-primary); }
 
     .nav-item.active {
       background: var(--accent-subtle);
@@ -181,9 +162,7 @@
       transition: background 0.2s;
     }
 
-    .nav-item.active .nav-icon {
-      background: var(--accent-dim);
-    }
+    .nav-item.active .nav-icon { background: var(--accent-dim); }
 
     .nav-icon svg {
       width: 15px; height: 15px;
@@ -245,28 +224,11 @@
       padding: 0 28px;
     }
 
-    .topbar-breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    .topbar-breadcrumb .crumb-active {
-      color: var(--text-primary);
-      font-weight: 500;
-    }
-
+    .topbar-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+    .topbar-breadcrumb .crumb-active { color: var(--text-primary); font-weight: 500; }
     .crumb-sep { color: var(--text-tertiary); font-size: 11px; }
-
     .topbar-spacer { flex: 1; }
-
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .topbar-actions { display: flex; align-items: center; gap: 10px; }
 
     .tb-btn {
       width: 34px; height: 34px;
@@ -282,7 +244,6 @@
     }
 
     .tb-btn:hover { background: var(--bg-4); color: var(--text-primary); border-color: var(--border-bright); }
-
     .tb-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 
     .notif-dot {
@@ -296,7 +257,7 @@
       transition: all 0.4s;
     }
 
-    /* ─── Main content ──────────────────────────────────── */
+    /* ─── Main ──────────────────────────────────────────── */
     .main {
       background: var(--bg-0);
       overflow-y: auto;
@@ -306,12 +267,7 @@
       gap: 28px;
     }
 
-    .page-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 20px;
-    }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 
     .page-eyebrow {
       font-size: 10.5px;
@@ -332,112 +288,37 @@
       color: var(--text-primary);
     }
 
-    .page-subtitle {
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-top: 8px;
-      max-width: 440px;
-      line-height: 1.6;
-    }
+    .page-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 8px; max-width: 440px; line-height: 1.6; }
 
-    /* Flash Messages */
-    .flash-container {
-      position: fixed;
-      top: 24px;
-      right: 24px;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .flash {
-      padding: 12px 20px;
-      border-radius: var(--radius-sm);
-      font-size: 13px;
-      font-weight: 500;
-      min-width: 240px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      animation: slideIn 0.3s ease forwards;
-    }
-
+    /* Flash */
+    .flash-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .flash { padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; min-width: 240px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: slideIn 0.3s ease forwards; }
     .flash-success { background: #39FF82; color: #000; }
     .flash-error   { background: #ef4444; color: #fff; }
-
-    @keyframes slideIn {
-      from { transform: translateX(110%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
+    @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
 
-    /* ─── Premium Modal (Glassmorphism) ─── */
-    .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-      display: none; place-items: center; z-index: 5000;
-      backdrop-filter: blur(8px); padding: 20px;
-      animation: fadeIn 0.2s ease;
-    }
+    /* Modal */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; place-items: center; z-index: 5000; backdrop-filter: blur(8px); padding: 20px; animation: fadeIn 0.2s ease; }
     .modal-backdrop.active { display: grid; }
-    
-    .modal-content {
-      background: rgba(15, 15, 15, 0.7);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(41, 121, 255, 0.15);
-      border-radius: 20px; padding: 40px; 
-      width: 100%; max-width: 500px;
-      box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 40px rgba(41, 121, 255, 0.05);
-      animation: modalSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-    }
-
-    .modal-content::before {
-      content: ''; position: absolute; inset: 0;
-      border-radius: 20px; padding: 1px;
-      background: linear-gradient(135deg, rgba(41,121,255,0.3), transparent 50%, rgba(41,121,255,0.1));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none;
-    }
-
+    .modal-content { background: rgba(15,15,15,0.7); backdrop-filter: blur(16px); border: 1px solid rgba(41,121,255,0.15); border-radius: 20px; padding: 40px; width: 100%; max-width: 500px; box-shadow: 0 40px 100px rgba(0,0,0,0.6); animation: modalSlide 0.4s cubic-bezier(0.16,1,0.3,1); position: relative; }
+    .modal-content::before { content: ''; position: absolute; inset: 0; border-radius: 20px; padding: 1px; background: linear-gradient(135deg, rgba(41,121,255,0.3), transparent 50%, rgba(41,121,255,0.1)); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
     .modal-header { margin-bottom: 32px; }
     .modal-eyebrow { font-size: 10px; font-weight: 600; color: #2979FF; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
     .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; color: #fff; letter-spacing: -0.5px; }
-
     .modal-form .form-group { margin-bottom: 24px; }
     .modal-form .form-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px; display: block; }
-    
-    .modal-form .form-control {
-      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px; padding: 14px 18px; color: #fff; font-size: 14px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .modal-form .form-control:focus {
-      background: rgba(41,121,255,0.04); border-color: rgba(41,121,255,0.4);
-      box-shadow: 0 0 0 4px rgba(41,121,255,0.1); outline: none;
-    }
-
+    .modal-form .form-control { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 18px; color: #fff; font-size: 14px; transition: all 0.3s; width: 100%; }
+    .modal-form .form-control:focus { background: rgba(41,121,255,0.04); border-color: rgba(41,121,255,0.4); box-shadow: 0 0 0 4px rgba(41,121,255,0.1); outline: none; }
     .modal-footer { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 40px; }
-    
-    .btn-modal-primary {
-      background: #2979FF; color: #000; border: none; border-radius: 12px; 
-      padding: 14px; font-weight: 600; font-size: 14px; cursor: pointer;
-      box-shadow: 0 0 20px rgba(41,121,255,0.3); transition: all 0.3s;
-    }
+    .btn-modal-primary { background: #2979FF; color: #000; border: none; border-radius: 12px; padding: 14px; font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 0 20px rgba(41,121,255,0.3); transition: all 0.3s; }
     .btn-modal-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(41,121,255,0.5); filter: brightness(1.1); }
-
-    .btn-modal-ghost {
-      background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px; padding: 14px; font-weight: 500; font-size: 14px; cursor: pointer;
-      transition: all 0.2s; text-align: center;
-    }
+    .btn-modal-ghost { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s; text-align: center; }
     .btn-modal-ghost:hover { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.2); }
-
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
     @keyframes modalSlide { from { transform: translateY(20px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
     {% block extra_css %}{% endblock %}
@@ -447,7 +328,7 @@
 
 <div class="shell">
 
-  <!-- Sidebar -->
+  <!-- ══════════════ SIDEBAR ══════════════ -->
   <aside class="sidebar">
     <a href="{{ url_for('document.dashboard') }}" class="sidebar-logo">
       <div class="logo-mark">
@@ -456,10 +337,11 @@
       <span class="logo-text">Build<span>Smart</span></span>
     </a>
 
+    <!-- Workspace section -->
     <div class="sidebar-section">
       <div class="sidebar-label">Workspace</div>
 
-      <a href="{{ url_for('document.dashboard') }}" 
+      <a href="{{ url_for('document.dashboard') }}"
          class="nav-item {% if request.endpoint == 'document.dashboard' %}active{% endif %}">
         <div class="nav-icon">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -467,7 +349,7 @@
         Operations Center
       </a>
 
-      <a href="{{ url_for('document.repository') }}" 
+      <a href="{{ url_for('document.repository') }}"
          class="nav-item {% if request.endpoint in ['document.repository', 'document.view_versions'] %}active{% endif %}">
         <div class="nav-icon">
           <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -475,7 +357,7 @@
         Document Vault
       </a>
 
-      <a href="{{ url_for('document.logs') }}" 
+      <a href="{{ url_for('document.logs') }}"
          class="nav-item {% if request.endpoint == 'document.logs' %}active{% endif %}">
         <div class="nav-icon">
           <svg viewBox="0 0 24 24"><line x1="17" y1="21" x2="17" y2="13"/><line x1="7" y1="21" x2="7" y2="3"/><line x1="12" y1="21" x2="12" y2="8"/></svg>
@@ -492,6 +374,19 @@
       </a>
     </div>
 
+    <!-- Compliance section — sits below Workspace -->
+    <div class="sidebar-section">
+      
+
+      <a href="{{ url_for('compliance.dashboard', project_id=1) }}"
+         class="nav-item {% if request.endpoint == 'compliance.dashboard' %}active{% endif %}">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        Compliance Tracker
+      </a>
+    </div>
+
     <div class="sidebar-spacer"></div>
 
     <a href="{{ url_for('document.profile') }}" class="sidebar-user">
@@ -503,7 +398,7 @@
     </a>
   </aside>
 
-  <!-- Topbar -->
+  <!-- ══════════════ TOPBAR ══════════════ -->
   <header class="topbar">
     <div class="topbar-breadcrumb">
       <span>BuildSmart</span>
@@ -522,13 +417,14 @@
     </div>
   </header>
 
-  <!-- Main -->
+  <!-- ══════════════ MAIN ══════════════ -->
   <main class="main">
     {% block content %}{% endblock %}
   </main>
 
 </div>
 
+<!-- Flash messages -->
 <div class="flash-container">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -538,18 +434,6 @@
     {% endif %}
   {% endwith %}
 </div>
-
-<script>
-  // Auto-dismiss flashes
-  setTimeout(() => {
-    document.querySelectorAll('.flash').forEach(f => {
-      f.style.opacity = '0';
-      f.style.transform = 'translateX(20px)';
-      f.style.transition = 'all 0.4s ease';
-      setTimeout(() => f.remove(), 400);
-    });
-  }, 4000);
-</script>
 
 <!-- Global Upload Modal -->
 <div id="globalUploadModal" class="modal-backdrop" onclick="if(event.target===this)this.classList.remove('active')">
@@ -569,11 +453,11 @@
       </div>
       <div class="form-group">
         <label class="form-label">Binary Payload (PDF / CAD / IMG)</label>
-        <input type="file" name="file" class="form-control" required style="padding: 10px;">
+        <input type="file" name="file" class="form-control" required style="padding:10px;">
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-modal-ghost" onclick="document.getElementById('globalUploadModal').classList.remove('active')">Dismiss</button>
-        <button type="submit" class="btn-modal-primary">Commit & Initialize</button>
+        <button type="submit" class="btn-modal-primary">Commit &amp; Initialize</button>
       </div>
     </form>
   </div>
@@ -583,17 +467,17 @@
   function openGlobalUpload() {
     document.getElementById('globalUploadModal').classList.add('active');
   }
-
-  // Auto-dismiss flashes
-  setTimeout(() => {
-    document.querySelectorAll('.flash').forEach(f => {
+  setTimeout(function() {
+    document.querySelectorAll('.flash').forEach(function(f) {
       f.style.opacity = '0';
       f.style.transform = 'translateX(20px)';
       f.style.transition = 'all 0.4s ease';
-      setTimeout(() => f.remove(), 400);
+      setTimeout(function() { f.remove(); }, 400);
     });
   }, 4000);
 </script>
+
+{% block extra_js %}{% endblock %}
 
 </body>
 </html>

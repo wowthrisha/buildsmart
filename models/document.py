@@ -12,6 +12,8 @@ class Document(db.Model):
     created_by = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     current_version = db.Column(db.Integer, default=1)
+    document_type = db.Column(db.String(120), nullable=True)   # ← moved here
+    is_outdated   = db.Column(db.Boolean, default=False)       # ← moved here
 
 
 class DocumentVersion(db.Model):
