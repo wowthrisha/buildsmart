@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Approval History — BuildSmart{% endblock %}
+{% block breadcrumb %}History Log{% endblock %}
+
+{% block extra_css %}
+<style>
+  .panel { background:var(--bg-1); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .panel-hdr { padding:16px 22px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .panel-title { font-size:13.5px; font-weight:500; }
+  .panel-count { font-size:12px; color:var(--text-secondary); }
+
+  .log-row { display:flex; align-items:flex-start; gap:16px; padding:14px 22px; border-bottom:1px solid var(--border); }
+  .log-row:last-child { border-bottom:none; }
+
+  .log-icon { width:32px; height:32px; border-radius:8px; display:grid; place-items:center; flex-shrink:0; margin-top:1px; }
+  .log-icon svg { width:14px; height:14px; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+
+  .log-body { flex:1; min-width:0; }
+  .log-action { font-size:13px; font-weight:500; color:var(--text-primary); }
+  .log-meta { font-size:11.5px; color:var(--text-secondary); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .log-notes { font-size:12px; color:var(--text-secondary); margin-top:6px; padding:8px 12px; background:var(--bg-3); border-radius:6px; font-style:italic; }
+
+  .trans-arrow { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; }
+  .trans-from { padding:2px 8px; border-radius:12px; }
+  .trans-to { padding:2px 8px; border-radius:12px; font-weight:500; }
+
+  .empty-state { padding:60px; text-align:center; color:var(--text-tertiary); font-size:13px; }
+</style>
+{% endblock %}
+
+{% macro status_color(s) %}{% if s == 'Approved' %}#39FF82{% elif s == 'Rejected' %}#ef4444{% elif s == 'Escalated' %}#FF6B1A{% elif s == 'Under Review' %}#2979FF{% elif s == 'Pending' %}#FFD600{% else %}#888{% endif %}{% endmacro %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">M1 — Approval Flow</div>
+    <h1 class="page-title">History Log</h1>
+    <p class="page-subtitle">Full audit trail of every approval state change and action.</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-hdr">
+    <span class="panel-title">All Events</span>
+    <span class="panel-count">{{ logs|length }} entries</span>
+  </div>
+
+  {% if logs %}
+    {% for log in logs %}
+    {% set is_approved = log.to_status == 'Approved' %}
+    {% set is_rejected = log.to_status == 'Rejected' %}
+    {% set is_escalated = log.to_status == 'Escalated' %}
+    <div class="log-row">
+      <div class="log-icon" style="background:{{ 'rgba(57,255,130,.12)' if is_approved else 'rgba(239,68,68,.12)' if is_rejected else 'rgba(255,107,26,.12)' if is_escalated else 'rgba(41,121,255,.12)' }}">
+        <svg viewBox="0 0 24 24" style="stroke:{{ '#39FF82' if is_approved else '#ef4444' if is_rejected else '#FF6B1A' if is_escalated else '#2979FF' }}">
+          {% if is_approved %}<path d="M20 6L9 17l-5-5"/>
+          {% elif is_rejected %}<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          {% elif is_escalated %}<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>
+          {% else %}<path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>{% endif %}
+        </svg>
+      </div>
+      <div class="log-body">
+        <div class="log-action">{{ log.action }}</div>
+        <div class="log-meta">
+          <span>By <strong>{{ log.performed_by or 'System' }}</strong></span>
+          <span>{{ log.timestamp.strftime('%d %b %Y, %H:%M') }}</span>
+          {% if log.from_status or log.to_status %}
+          <span class="trans-arrow">
+            {% if log.from_status %}<span class="trans-from" style="background:{{ status_color(log.from_status) }}22;color:{{ status_color(log.from_status) }}">{{ log.from_status }}</span>{% endif %}
+            {% if log.from_status and log.to_status %}<span style="color:var(--text-tertiary)">→</span>{% endif %}
+            {% if log.to_status %}<span class="trans-to" style="background:{{ status_color(log.to_status) }}22;color:{{ status_color(log.to_status) }}">{{ log.to_status }}</span>{% endif %}
+          </span>
+          {% endif %}
+          {% if log.approval and log.approval.title %}
+          <span style="color:var(--text-secondary)">· "{{ log.approval.title }}"</span>
+          {% endif %}
+        </div>
+        {% if log.notes %}
+        <div class="log-notes">{{ log.notes }}</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">No history yet. Submit and process approval requests to see the log.</div>
+  {% endif %}
+</div>
+{% endblock %}

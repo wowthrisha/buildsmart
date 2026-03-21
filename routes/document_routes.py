@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, render_template, url_for, send_file, jsonify
+from flask import Blueprint, request, redirect, render_template, url_for, send_file, jsonify, flash
 from extensions import db
 from models.document import Document, DocumentVersion, DocumentLog
 from models.user import User
@@ -48,6 +48,10 @@ def dashboard():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
 
+    if user.role == "Owner":
+        flash("This section is for professional users. You have been redirected.")
+        return redirect(url_for("owner.owner_home"))
+
     documents = Document.query.order_by(Document.created_at.desc()).all()
     logs = DocumentLog.query.order_by(DocumentLog.timestamp.desc()).limit(10).all()
 
@@ -67,6 +71,9 @@ def dashboard():
 def upload_document():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
+
+    if user.role == "Owner":
+        return redirect(url_for("owner.owner_home"))
 
     title       = request.form.get("title", "")
     description = request.form.get("description", "")
@@ -196,6 +203,8 @@ def compliance_upload():
 def repository():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
+    if user.role == "Owner":
+        return redirect(url_for("owner.owner_home"))
     return render_template("repository.html", documents=Document.query.all(), user=user)
 
 
@@ -259,6 +268,8 @@ def download_file(version_id):
 def logs():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
+    if user.role == "Owner":
+        return redirect(url_for("owner.owner_home"))
     logs = DocumentLog.query.order_by(DocumentLog.timestamp.desc()).all()
     return render_template("logs.html", logs=logs, user=user)
 

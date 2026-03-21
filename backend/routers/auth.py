@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -14,7 +16,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # ── Request / Response schemas ────────────────────────────────────────────────
 
 class RegisterRequest(BaseModel):
-    username: str
+    username: Optional[str] = None
     email: str
     password: str
     role: str = "Engineer"
@@ -39,12 +41,15 @@ class UserResponse(BaseModel):
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("20/hour")
 def register(request: Request, body: RegisterRequest, db: Session = Depends(get_db)):
+    # Default username to email prefix if not provided
+    username = body.username or body.email.split("@")[0]
+
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email address already registered",
         )
-    if db.query(User).filter(User.username == body.username).first():
+    if db.query(User).filter(User.username == username).first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Username already taken",
@@ -55,7 +60,7 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
             detail=f"Invalid role. Must be one of: {', '.join(sorted(VALID_ROLES))}",
         )
     new_user = User(
-        username=body.username,
+        username=username,
         email=body.email,
         password_hash=generate_password_hash(body.password, method="pbkdf2:sha256"),
         role=body.role,

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Approval Dashboard — BuildSmart{% endblock %}
+{% block breadcrumb %}Approval Flow{% endblock %}
+
+{% block extra_css %}
+<style>
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  @media(max-width:1200px){ .stats-row { grid-template-columns: repeat(3, 1fr); } }
+  @media(max-width:700px){ .stats-row { grid-template-columns: 1fr 1fr; } }
+
+  .stat-card { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 20px; position: relative; overflow: hidden; transition: transform 0.2s; }
+  .stat-card:hover { transform: translateY(-1px); border-color: var(--border-bright); }
+  .stat-card.hl { border-color: var(--card-accent, var(--accent)); }
+  .stat-card.hl::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background: var(--card-accent, var(--accent)); box-shadow: 0 0 10px var(--card-accent, var(--accent)); }
+  .stat-label { font-size:11px; font-weight:500; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:12px; }
+  .stat-value { font-family:'DM Mono',monospace; font-size:32px; font-weight:300; color:var(--text-primary); line-height:1; }
+  .stat-sub { font-size:11px; margin-top:8px; color:var(--text-secondary); }
+
+  .layout-2 { display:grid; grid-template-columns:1fr 360px; gap:16px; align-items:start; }
+  @media(max-width:1100px){ .layout-2 { grid-template-columns:1fr; } }
+
+  .panel { background:var(--bg-1); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .panel-hdr { padding:16px 22px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .panel-title { font-size:13.5px; font-weight:500; }
+  .panel-link { font-size:12px; color:var(--accent); text-decoration:none; }
+  .panel-link:hover { opacity:.7; }
+
+  .req-row { display:flex; align-items:center; gap:14px; padding:13px 22px; border-bottom:1px solid var(--border); text-decoration:none; color:inherit; transition:background .15s; }
+  .req-row:last-child { border-bottom:none; }
+  .req-row:hover { background:var(--bg-2); }
+  .req-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .req-body { flex:1; min-width:0; }
+  .req-title { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .req-meta { font-size:11.5px; color:var(--text-secondary); margin-top:2px; }
+  .req-badge { font-size:10px; font-weight:500; padding:2px 8px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+
+  .risk-row { display:flex; align-items:center; gap:12px; padding:12px 22px; border-bottom:1px solid var(--border); }
+  .risk-row:last-child { border-bottom:none; }
+  .risk-icon { width:30px; height:30px; border-radius:7px; background:rgba(255,107,26,.1); display:grid; place-items:center; flex-shrink:0; }
+  .risk-icon svg { width:14px; height:14px; stroke:#FF6B1A; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .risk-body { flex:1; min-width:0; }
+  .risk-name { font-size:12.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .risk-score { font-size:11px; color:#FF6B1A; margin-top:1px; }
+  .risk-bar-bg { height:3px; background:var(--bg-4); border-radius:3px; margin-top:6px; }
+  .risk-bar { height:3px; background:#FF6B1A; border-radius:3px; }
+
+  .empty-state { padding:40px 22px; text-align:center; color:var(--text-tertiary); font-size:13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">M1 — Approval Flow</div>
+    <h1 class="page-title">Approval Dashboard</h1>
+    <p class="page-subtitle">Monitor request states, risk scores, and auto-escalations in real time.</p>
+  </div>
+  <a href="{{ url_for('approval.queue') }}" style="display:flex;align-items:center;gap:7px;padding:10px 18px;background:var(--accent);color:#000;font-size:13px;font-weight:600;border-radius:var(--radius-sm);text-decoration:none;margin-top:4px;box-shadow:0 0 16px var(--accent-glow);">
+    <svg style="width:13px;height:13px;stroke:#000;fill:none;stroke-width:2;stroke-linecap:round;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New Request
+  </a>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Total</div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-sub">All time</div>
+  </div>
+  <div class="stat-card hl" style="--card-accent:#FFD600">
+    <div class="stat-label">Pending</div>
+    <div class="stat-value" style="color:#FFD600">{{ pending }}</div>
+    <div class="stat-sub">Awaiting review</div>
+  </div>
+  <div class="stat-card hl" style="--card-accent:#2979FF">
+    <div class="stat-label">Under Review</div>
+    <div class="stat-value" style="color:#2979FF">{{ under_review }}</div>
+    <div class="stat-sub">In progress</div>
+  </div>
+  <div class="stat-card hl" style="--card-accent:#39FF82">
+    <div class="stat-label">Approved</div>
+    <div class="stat-value" style="color:#39FF82">{{ approved }}</div>
+    <div class="stat-sub">Granted</div>
+  </div>
+  <div class="stat-card hl" style="--card-accent:#FF6B1A">
+    <div class="stat-label">Escalated / Rejected</div>
+    <div class="stat-value" style="color:#FF6B1A">{{ escalated + rejected }}</div>
+    <div class="stat-sub">Needs attention</div>
+  </div>
+</div>
+
+<div class="layout-2">
+  <!-- Recent requests -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <span class="panel-title">Recent Requests</span>
+      <a href="{{ url_for('approval.queue') }}" class="panel-link">View all →</a>
+    </div>
+    {% if recent %}
+      {% for ar in recent %}
+      <a href="{{ url_for('approval.queue') }}" class="req-row">
+        <span class="req-dot" style="background:{{ ar.status_color }}; box-shadow:0 0 6px {{ ar.status_color }}"></span>
+        <div class="req-body">
+          <div class="req-title">{{ ar.title }}</div>
+          <div class="req-meta">{{ ar.submitted_by }} · {{ ar.created_at.strftime('%d %b %Y') }}{% if ar.project %} · {{ ar.project.name }}{% endif %}</div>
+        </div>
+        <span class="req-badge" style="background:{{ ar.status_color }}22;color:{{ ar.status_color }}">{{ ar.status }}</span>
+      </a>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">No requests yet. <a href="{{ url_for('approval.queue') }}" style="color:var(--accent)">Submit one →</a></div>
+    {% endif %}
+  </div>
+
+  <!-- High-risk panel -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <span class="panel-title">High Risk Requests</span>
+      <span style="font-size:11px;color:#FF6B1A">⚠ Risk ≥ 60%</span>
+    </div>
+    {% if high_risk %}
+      {% for ar in high_risk %}
+      <div class="risk-row">
+        <div class="risk-icon">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="risk-body">
+          <div class="risk-name">{{ ar.title }}</div>
+          <div class="risk-score">{{ ar.risk_label }} risk · {{ (ar.risk_score * 100)|int }}%</div>
+          <div class="risk-bar-bg"><div class="risk-bar" style="width:{{ (ar.risk_score * 100)|int }}%"></div></div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">No high-risk requests.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

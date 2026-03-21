@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Compliance Tracker — BuildSmart{% endblock %}
+{% block breadcrumb %}Readiness Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+  .coming-banner {
+    background: rgba(255,107,26,.08); border: 1px solid rgba(255,107,26,.25);
+    border-radius: var(--radius); padding: 16px 22px;
+    display: flex; align-items: center; gap: 14px;
+    font-size: 13px; color: #FF6B1A;
+  }
+  .coming-banner svg { width:18px;height:18px;stroke:#FF6B1A;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0; }
+
+  .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  @media(max-width:900px){ .stats-row { grid-template-columns:1fr 1fr; } }
+  .stat-card { background:var(--bg-1); border:1px solid var(--border); border-radius:var(--radius); padding:22px 20px; position:relative; overflow:hidden; opacity:.6; }
+  .stat-card::after { content:'COMING SOON'; position:absolute; top:10px;right:10px; font-size:8px; font-weight:700; letter-spacing:1px; color:var(--accent); background:var(--accent-dim); padding:2px 7px; border-radius:10px; }
+  .stat-label { font-size:11px; font-weight:500; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:12px; }
+  .stat-value { font-family:'DM Mono',monospace; font-size:32px; font-weight:300; color:var(--text-primary); line-height:1; }
+  .stat-sub { font-size:11px; margin-top:8px; color:var(--text-secondary); }
+
+  .layout-2 { display:grid; grid-template-columns:1fr 340px; gap:16px; align-items:start; }
+  @media(max-width:1100px){ .layout-2 { grid-template-columns:1fr; } }
+
+  .panel { background:var(--bg-1); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .panel-hdr { padding:16px 22px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .panel-title { font-size:13.5px; font-weight:500; }
+
+  /* Progress ring */
+  .progress-ring-wrap { display:flex; flex-direction:column; align-items:center; padding:32px; gap:16px; }
+  .progress-ring { transform:rotate(-90deg); }
+  .progress-ring-bg { fill:none; stroke:var(--bg-4); stroke-width:6; }
+  .progress-ring-fill { fill:none; stroke:#FF6B1A; stroke-width:6; stroke-linecap:round; stroke-dasharray:251; stroke-dashoffset:251; transition:stroke-dashoffset .5s; opacity:.4; }
+  .progress-label { text-align:center; }
+  .progress-pct { font-family:'DM Mono',monospace; font-size:36px; font-weight:300; color:var(--text-primary); }
+  .progress-sub { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+
+  /* Checklist */
+  .checklist { display:flex; flex-direction:column; }
+  .check-item { display:flex; align-items:center; gap:14px; padding:13px 22px; border-bottom:1px solid var(--border); opacity:.5; }
+  .check-item:last-child { border-bottom:none; }
+  .check-box { width:18px; height:18px; border-radius:4px; border:1.5px dashed var(--text-tertiary); flex-shrink:0; }
+  .check-label { font-size:13px; color:var(--text-primary); }
+  .check-tag { margin-left:auto; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:500; }
+  .tag-missing { background:rgba(239,68,68,.12); color:#ef4444; }
+  .tag-optional { background:rgba(136,136,136,.1); color:#888; }
+
+  /* Gap cards */
+  .gap-card { padding:16px 22px; border-bottom:1px solid var(--border); }
+  .gap-card:last-child { border-bottom:none; }
+  .gap-title { font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+  .gap-pill { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:500; }
+  .gap-critical { background:rgba(239,68,68,.12); color:#ef4444; }
+  .gap-warning { background:rgba(255,214,0,.12); color:#FFD600; }
+  .gap-desc { font-size:12px; color:var(--text-secondary); line-height:1.5; }
+  .gap-bar-bg { height:3px; background:var(--bg-4); border-radius:3px; margin-top:10px; }
+  .gap-bar { height:3px; border-radius:3px; opacity:.5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">M4 — Compliance Tracker</div>
+    <h1 class="page-title">Readiness Tracker</h1>
+    <p class="page-subtitle">Submission readiness checklist, compliance gap detection, and missing document flagging.</p>
+  </div>
+</div>
+
+<div class="coming-banner">
+  <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <span><strong>Preview Mode</strong> — This module is under active development. The UI below is a static preview of the planned features. Backend integration coming soon.</span>
+</div>
+
+<!-- Stats (static preview) -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Readiness Score</div>
+    <div class="stat-value" style="color:#FF6B1A">0%</div>
+    <div class="stat-sub">0 of 12 checks passed</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Missing Docs</div>
+    <div class="stat-value">7</div>
+    <div class="stat-sub">Required for submission</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Compliance Gaps</div>
+    <div class="stat-value">4</div>
+    <div class="stat-sub">Critical issues detected</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Est. Completion</div>
+    <div class="stat-value">—</div>
+    <div class="stat-sub">Based on activity rate</div>
+  </div>
+</div>
+
+<div class="layout-2">
+  <!-- Checklist -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <span class="panel-title">Submission Checklist</span>
+      <span style="font-size:12px;color:var(--text-secondary)">0 / 12 complete</span>
+    </div>
+    <div class="checklist">
+      {% for item in [
+        ('Site Plan (1:500 scale)', 'Missing', 'tag-missing'),
+        ('Structural Drawing Set', 'Missing', 'tag-missing'),
+        ('Foundation Plan', 'Missing', 'tag-missing'),
+        ('Electrical Layout', 'Missing', 'tag-missing'),
+        ('Plumbing & Drainage Plan', 'Missing', 'tag-missing'),
+        ('Fire Safety Certificate', 'Missing', 'tag-missing'),
+        ('Land Ownership Proof (Patta)', 'Missing', 'tag-missing'),
+        ('Environmental Clearance', 'Optional', 'tag-optional'),
+        ('Soil Test Report', 'Optional', 'tag-optional'),
+        ('Survey Sketch (FMB)', 'Missing', 'tag-missing'),
+        ('NOC from Fire Department', 'Missing', 'tag-missing'),
+        ('Architect\'s Signature & Seal', 'Missing', 'tag-missing'),
+      ] %}
+      <div class="check-item">
+        <div class="check-box"></div>
+        <span class="check-label">{{ item[0] }}</span>
+        <span class="check-tag {{ item[2] }}">{{ item[1] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Gap Analysis -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <span class="panel-title">Compliance Gaps</span>
+    </div>
+
+    <div class="gap-card">
+      <div class="gap-title">
+        Setback Violation
+        <span class="gap-pill gap-critical">Critical</span>
+      </div>
+      <div class="gap-desc">Front setback appears less than the 3m minimum required for R1 residential zone under TNCDBR 2019.</div>
+      <div class="gap-bar-bg"><div class="gap-bar" style="width:85%;background:#ef4444"></div></div>
+    </div>
+
+    <div class="gap-card">
+      <div class="gap-title">
+        FAR Exceeded
+        <span class="gap-pill gap-critical">Critical</span>
+      </div>
+      <div class="gap-desc">Proposed Floor Area Ratio (2.1) exceeds the permitted 1.75 for a 20ft road width zone.</div>
+      <div class="gap-bar-bg"><div class="gap-bar" style="width:70%;background:#ef4444"></div></div>
+    </div>
+
+    <div class="gap-card">
+      <div class="gap-title">
+        Parking Deficiency
+        <span class="gap-pill gap-warning">Warning</span>
+      </div>
+      <div class="gap-desc">Parking provision (4 slots) is below the required 6 slots for proposed built-up area.</div>
+      <div class="gap-bar-bg"><div class="gap-bar" style="width:50%;background:#FFD600"></div></div>
+    </div>
+
+    <div class="gap-card">
+      <div class="gap-title">
+        Height Clearance
+        <span class="gap-pill gap-warning">Warning</span>
+      </div>
+      <div class="gap-desc">Proposed height (13.8m) approaches the 14m non-highrise cap per G.O.Ms.No.70.</div>
+      <div class="gap-bar-bg"><div class="gap-bar" style="width:35%;background:#FFD600"></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -7,22 +7,27 @@ import datetime
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
+VALID_ROLES = {"Architect", "Engineer", "Contractor", "Authority", "Owner"}
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
-        
+
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password_hash, password):
             access_token = create_access_token(identity=str(user.id), expires_delta=datetime.timedelta(hours=12))
-            resp = make_response(redirect(url_for("document.dashboard")))
+            if user.role == "Owner":
+                resp = make_response(redirect(url_for("owner.owner_home")))
+            else:
+                resp = make_response(redirect(url_for("document.dashboard")))
             set_access_cookies(resp, access_token)
             flash("Logged in successfully.", "success")
             return resp
         else:
             flash("Invalid email or password.", "error")
-            
+
     return render_template("login.html")
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -32,16 +37,19 @@ def register():
         email = request.form.get("email")
         password = request.form.get("password")
         role = request.form.get("role")
-        
+
+        if role not in VALID_ROLES:
+            role = "Engineer"
+
         if User.query.filter_by(email=email).first():
             flash("Email address already exists", "error")
             return redirect(url_for("auth.register"))
-            
+
         new_user = User(
             username=username,
             email=email,
             password_hash=generate_password_hash(password, method='pbkdf2:sha256'),
-            role=role if role else "Engineer"
+            role=role
         )
         
         db.session.add(new_user)

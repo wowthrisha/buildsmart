@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Request Queue — BuildSmart{% endblock %}
+{% block breadcrumb %}Request Queue{% endblock %}
+
+{% block extra_css %}
+<style>
+  .filter-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  .ftab { padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500; text-decoration:none; background:var(--bg-3); color:var(--text-secondary); border:1px solid var(--border); transition:all .2s; }
+  .ftab:hover { background:var(--bg-4); color:var(--text-primary); }
+  .ftab.active { background:var(--accent-dim); color:var(--accent); border-color:var(--accent); }
+
+  .queue-table { width:100%; border-collapse:collapse; }
+  .queue-table th { font-size:10.5px; font-weight:500; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.8px; padding:10px 16px; text-align:left; border-bottom:1px solid var(--border); }
+  .queue-table td { padding:14px 16px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .queue-table tr:last-child td { border-bottom:none; }
+  .queue-table tr:hover td { background:var(--bg-2); }
+
+  .status-pill { display:inline-block; font-size:11px; font-weight:500; padding:3px 10px; border-radius:20px; }
+  .risk-chip { display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; }
+  .risk-High { background:rgba(255,107,26,.15); color:#FF6B1A; }
+  .risk-Medium { background:rgba(255,214,0,.15); color:#FFD600; }
+  .risk-Low { background:rgba(57,255,130,.15); color:#39FF82; }
+
+  .action-btns { display:flex; gap:6px; flex-wrap:wrap; }
+  .btn-sm { padding:5px 12px; border-radius:6px; font-size:11.5px; font-weight:500; cursor:pointer; border:1px solid transparent; transition:all .2s; text-decoration:none; display:inline-block; }
+  .btn-review { background:rgba(41,121,255,.15); color:#2979FF; border-color:rgba(41,121,255,.3); }
+  .btn-review:hover { background:rgba(41,121,255,.25); }
+  .btn-approve { background:rgba(57,255,130,.15); color:#39FF82; border-color:rgba(57,255,130,.3); }
+  .btn-approve:hover { background:rgba(57,255,130,.25); }
+  .btn-reject { background:rgba(239,68,68,.12); color:#ef4444; border-color:rgba(239,68,68,.25); }
+  .btn-reject:hover { background:rgba(239,68,68,.2); }
+
+  .overdue-tag { font-size:10px; color:#FF6B1A; font-weight:500; margin-top:2px; }
+  .desc-cell { max-width:260px; font-size:12px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .panel { background:var(--bg-1); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .panel-hdr { padding:16px 22px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .panel-title { font-size:13.5px; font-weight:500; }
+  .empty-state { padding:48px; text-align:center; color:var(--text-tertiary); font-size:13px; }
+
+  /* Modal overrides for reject form */
+  .reject-modal .modal-content { border-color:rgba(239,68,68,.2); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">M1 — Approval Flow</div>
+    <h1 class="page-title">Request Queue</h1>
+    <p class="page-subtitle">All approval requests with live state transitions and risk scoring.</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <a href="{{ url_for('approval.kanban') }}"
+       style="display:flex;align-items:center;gap:7px;padding:10px 18px;background:var(--bg-2);color:var(--text-secondary);font-size:13px;font-weight:500;border-radius:var(--radius-sm);border:1px solid var(--border);text-decoration:none;transition:all .2s;"
+       onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+       onmouseout="this.style.borderColor='';this.style.color=''">
+      <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;" viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="18"/><rect x="10" y="3" width="5" height="12"/><rect x="17" y="3" width="5" height="7"/></svg>
+      Kanban View
+    </a>
+    <button onclick="document.getElementById('submitModal').classList.add('active')"
+      style="display:flex;align-items:center;gap:7px;padding:10px 18px;background:var(--accent);color:#000;font-size:13px;font-weight:600;border-radius:var(--radius-sm);border:none;cursor:pointer;box-shadow:0 0 16px var(--accent-glow);">
+      <svg style="width:13px;height:13px;stroke:#000;fill:none;stroke-width:2;stroke-linecap:round;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Submit Request
+    </button>
+  </div>
+</div>
+
+<!-- Filter tabs -->
+<div class="filter-tabs">
+  {% for lbl, key in [('All',''),('Pending','Pending'),('Under Review','Under Review'),('Approved','Approved'),('Rejected','Rejected'),('Escalated','Escalated')] %}
+  <a href="{{ url_for('approval.queue', status=key) }}"
+     class="ftab {% if status_filter == key %}active{% endif %}">
+    {{ lbl }}
+    <span style="margin-left:4px;opacity:.6">{{ counts.get(lbl if lbl != 'All' else 'All', 0) }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Table -->
+<div class="panel">
+  {% if requests_list %}
+  <table class="queue-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Submitted By</th>
+        <th>Status</th>
+        <th>Risk</th>
+        <th>Deadline</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ar in requests_list %}
+      <tr>
+        <td>
+          <div style="font-size:13px;font-weight:500">{{ ar.title }}</div>
+          <div class="desc-cell">{{ ar.description or '—' }}</div>
+          {% if ar.is_overdue %}<div class="overdue-tag">⏰ Overdue</div>{% endif %}
+        </td>
+        <td style="font-size:12.5px">{{ ar.submitted_by }}</td>
+        <td>
+          <span class="status-pill"
+            style="background:{{ ar.status_color }}22;color:{{ ar.status_color }}">
+            {{ ar.status }}
+          </span>
+        </td>
+        <td>
+          <span class="risk-chip risk-{{ ar.risk_label }}">
+            {{ ar.risk_label }} {{ (ar.risk_score*100)|int }}%
+          </span>
+        </td>
+        <td style="font-size:12px;color:var(--text-secondary)">
+          {% if ar.deadline %}{{ ar.deadline.strftime('%d %b %Y') }}{% else %}—{% endif %}
+        </td>
+        <td>
+          <div class="action-btns">
+            {% set allowed = valid_transitions.get(ar.status, []) %}
+            {% if 'Under Review' in allowed %}
+            <form method="POST" action="{{ url_for('approval.transition', ar_id=ar.id) }}" style="display:inline">
+              <input type="hidden" name="status" value="Under Review">
+              <button class="btn-sm btn-review" type="submit">Review</button>
+            </form>
+            {% endif %}
+            {% if 'Approved' in allowed %}
+            <form method="POST" action="{{ url_for('approval.transition', ar_id=ar.id) }}" style="display:inline">
+              <input type="hidden" name="status" value="Approved">
+              <button class="btn-sm btn-approve" type="submit"{% if user.role != 'Authority' %} disabled title="Authority only"{% endif %}>Approve</button>
+            </form>
+            {% endif %}
+            {% if 'Rejected' in allowed %}
+            <button class="btn-sm btn-reject"
+              onclick="openRejectModal({{ ar.id }})"
+              {% if user.role != 'Authority' %} disabled title="Authority only"{% endif %}>Reject</button>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No requests found{% if status_filter %} with status "{{ status_filter }}"{% endif %}.</div>
+  {% endif %}
+</div>
+
+<!-- Submit Modal -->
+<div id="submitModal" class="modal-backdrop" onclick="if(event.target===this)this.classList.remove('active')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-eyebrow">Approval Flow</div>
+      <h2 class="modal-title">Submit Approval Request</h2>
+    </div>
+    <form action="{{ url_for('approval.submit') }}" method="POST" class="modal-form">
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input type="text" name="title" class="form-control" placeholder="e.g. Site Plan — Plot 12A" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="3" placeholder="Describe scope, compliance notes, etc. (min 50 chars reduces risk score)…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Linked Project</label>
+        <select name="project_id" class="form-control">
+          <option value="">— None —</option>
+          {% for p in projects %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deadline</label>
+        <input type="date" name="deadline" class="form-control">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-ghost" onclick="document.getElementById('submitModal').classList.remove('active')">Cancel</button>
+        <button type="submit" class="btn-modal-primary">Submit Request</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="modal-backdrop reject-modal" onclick="if(event.target===this)this.classList.remove('active')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-eyebrow" style="color:#ef4444">Reject Request</div>
+      <h2 class="modal-title">Provide Rejection Reason</h2>
+    </div>
+    <form id="rejectForm" method="POST" class="modal-form">
+      <input type="hidden" name="status" value="Rejected">
+      <div class="form-group">
+        <label class="form-label">Rejection Reason *</label>
+        <textarea name="rejection_reason" class="form-control" rows="4" placeholder="Explain why this request is being rejected…" required></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Review Notes (optional)</label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Internal notes…"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-ghost" onclick="document.getElementById('rejectModal').classList.remove('active')">Cancel</button>
+        <button type="submit" class="btn-modal-primary" style="background:#ef4444;color:#fff">Confirm Reject</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openRejectModal(arId) {
+    document.getElementById('rejectForm').action = '/approvals/' + arId + '/transition';
+    document.getElementById('rejectModal').classList.add('active');
+  }
+</script>
+{% endblock %}

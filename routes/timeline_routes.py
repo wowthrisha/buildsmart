@@ -46,6 +46,8 @@ def get_project_stage(events):
 def projects():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
+    if user.role == "Owner":
+        return redirect(url_for("owner.owner_home"))
     projects = Project.query.order_by(Project.created_at.desc()).all()
 
     project_summaries = []
@@ -75,6 +77,9 @@ def projects():
 @timeline_bp.route("/timeline/create_project", methods=["POST"])
 @jwt_required()
 def create_project():
+    user = User.query.get(get_jwt_identity())
+    if user.role == "Owner":
+        return redirect(url_for("owner.owner_home"))
     name = request.form.get("name", "").strip()
     description = request.form.get("description", "").strip()
 
@@ -104,6 +109,8 @@ def create_project():
 def timeline(project_id):
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
+    if user.role == "Owner":
+        return redirect(url_for("owner.owner_home"))
     project = Project.query.get_or_404(project_id)
     events = TimelineEvent.query.filter_by(project_id=project.id).order_by(TimelineEvent.created_at.desc()).all()
     current_stage, latest_rejection = get_project_stage(events)
@@ -122,6 +129,9 @@ def timeline(project_id):
 @timeline_bp.route("/timeline/add_event", methods=["POST"])
 @jwt_required()
 def add_timeline_event():
+    user = User.query.get(get_jwt_identity())
+    if user.role == "Owner":
+        return redirect(url_for("owner.owner_home"))
     project_id = request.form.get("project_id", type=int)
     event_type = request.form.get("event_type", "").strip()
     description = request.form.get("description", "").strip()
@@ -142,6 +152,16 @@ def add_timeline_event():
 
     flash("Timeline event added successfully.", "success")
     return redirect(url_for("timeline.timeline", project_id=project.id))
+
+
+@timeline_bp.route("/timeline/gantt")
+@jwt_required()
+def gantt():
+    user = User.query.get(get_jwt_identity())
+    if user.role == "Owner":
+        return redirect(url_for("owner.owner_home"))
+    projects = Project.query.order_by(Project.name).all()
+    return render_template("gantt.html", user=user, projects=projects)
 
 
 @timeline_bp.route("/public/project/<int:project_id>")

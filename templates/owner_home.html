@@ -1,0 +1,809 @@
+{% extends "base.html" %}
+
+{% block title %}My Plan Check — BuildSmart{% endblock %}
+{% block page_class %}page-dashboard{% endblock %}
+{% block breadcrumb %}My Plan{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Education strip ─────────────────────────────────── */
+  .owner-edu-strip {
+    padding: 24px;
+    background: rgba(41,121,255,0.06);
+    border: 1px solid rgba(41,121,255,0.15);
+    border-radius: 12px;
+    margin-bottom: 28px;
+  }
+  .owner-edu-strip h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .edu-ta {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    margin-bottom: 10px;
+  }
+  .edu-desc {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 680px;
+    margin-bottom: 18px;
+  }
+  .edu-steps {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .edu-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+  .step-n {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  .step-arr { color: var(--text-tertiary); font-size: 16px; }
+
+  /* ── Upload hero ─────────────────────────────────────── */
+  .upload-hero {
+    border: 2px dashed rgba(41,121,255,0.35);
+    border-radius: 14px;
+    padding: 52px 32px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: all 0.2s;
+    background: rgba(41,121,255,0.02);
+  }
+  .upload-hero:hover {
+    border-color: var(--accent);
+    background: var(--accent-subtle);
+  }
+  .uh-icon {
+    color: var(--accent);
+    margin-bottom: 16px;
+    opacity: 0.8;
+  }
+  .uh-title {
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+  .uh-ta {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    font-weight: 400;
+  }
+  .uh-hint {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 20px;
+    margin-top: 6px;
+  }
+  .uh-btn {
+    display: inline-block;
+    padding: 11px 28px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 0 16px var(--accent-glow);
+    transition: all 0.2s;
+  }
+  .uh-btn:hover { filter: brightness(1.1); }
+  .upload-error {
+    color: #FF6B1A;
+    font-size: 13px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(255,107,26,0.08);
+    border-radius: 8px;
+    display: inline-block;
+  }
+
+  /* ── Loading ─────────────────────────────────────────── */
+  .owner-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    gap: 14px;
+  }
+  .owner-spinner {
+    width: 44px; height: 44px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+  .loading-msg    { font-size: 14px; color: var(--text-primary); }
+  .loading-msg-ta { font-size: 13px; color: var(--text-secondary); }
+
+  /* ── Status banner ───────────────────────────────────── */
+  .status-banner {
+    padding: 18px 22px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .banner-pass     { background: rgba(57,255,130,0.08);  border: 1px solid rgba(57,255,130,0.2); }
+  .banner-marginal { background: rgba(255,214,0,0.08);   border: 1px solid rgba(255,214,0,0.2); }
+  .banner-fail     { background: rgba(255,107,26,0.08);  border: 1px solid rgba(255,107,26,0.2); }
+  .status-msg-en { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .status-msg-ta { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .status-badge  { padding: 6px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+  .badge-pass     { background: rgba(57,255,130,0.15);  color: #39FF82; }
+  .badge-marginal { background: rgba(255,214,0,0.15);   color: #FFD600; }
+  .badge-fail     { background: rgba(255,107,26,0.15);  color: #FF6B1A; }
+
+  /* ── Owner cards ─────────────────────────────────────── */
+  .owner-card {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  .owner-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+  }
+  .card-title-ta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 400;
+    display: block;
+    margin-top: 3px;
+  }
+
+  /* ── Extracted fields ────────────────────────────────── */
+  .extracted-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .ext-field {
+    background: var(--bg-2);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid var(--border);
+  }
+  .ext-label    { font-size: 11px; color: var(--text-secondary); }
+  .ext-ta-label { font-size: 10px; color: var(--text-tertiary); display: block; margin-top: 1px; }
+  .ext-val      { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-top: 4px; }
+
+  /* ── Smart questions ─────────────────────────────────── */
+  .smart-questions { margin-top: 12px; }
+  .sq-title  { font-size: 12px; color: #FFD600; margin-bottom: 10px; }
+  .sq-ta     { font-size: 11px; color: var(--text-tertiary); display: block; margin-top: 2px; }
+  .sq-item   { margin-bottom: 10px; }
+  .sq-label  { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+  .sq-input  {
+    width: 100%; max-width: 260px;
+    padding: 8px 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .sq-input:focus { outline: none; border-color: var(--accent); }
+
+  /* ── Rule cards ──────────────────────────────────────── */
+  .rule-list  { display: flex; flex-direction: column; gap: 10px; }
+  .rule-card  {
+    background: var(--bg-2);
+    border-radius: 10px;
+    padding: 16px;
+    border-left: 3px solid var(--border);
+  }
+  .rule-top   { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .rule-name  { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+  .rule-name-ta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .rule-verdict { font-size: 13px; font-weight: 700; white-space: nowrap; padding-left: 12px; }
+  .rule-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .rule-bar-bg   { flex: 1; height: 6px; background: var(--bg-3); border-radius: 3px; overflow: hidden; }
+  .rule-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .rule-pct      { font-size: 13px; font-weight: 700; min-width: 38px; text-align: right; }
+  .rule-edu      { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 4px; }
+  .rule-fix-inline {
+    font-size: 12px;
+    color: #FF6B1A;
+    background: rgba(255,107,26,0.08);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 6px;
+  }
+
+  /* ── Fixes panel ─────────────────────────────────────── */
+  .fix-list  { display: flex; flex-direction: column; gap: 2px; }
+  .fix-item  { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .fix-item:last-child { border-bottom: none; }
+  .fix-num   {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #FF6B1A;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .fix-rule  { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .fix-text  { font-size: 12px; color: var(--text-secondary); margin-top: 3px; line-height: 1.5; }
+
+  /* ── Ask section ─────────────────────────────────────── */
+  .ask-card { background: rgba(41,121,255,0.04); border-color: rgba(41,121,255,0.2); }
+  .ask-row  { display: flex; gap: 10px; margin-top: 10px; }
+  .ask-input {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-primary);
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .ask-input:focus  { outline: none; border-color: var(--accent); }
+  .ask-input::placeholder { color: var(--text-tertiary); }
+  .ask-btn  {
+    padding: 10px 22px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s;
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  .ask-btn:hover { filter: brightness(1.1); }
+  .ask-answer {
+    margin-top: 14px;
+    padding: 16px;
+    background: var(--bg-2);
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-primary);
+  }
+  .ans-loading { color: var(--text-secondary); font-size: 13px; }
+  .ans-src     { font-size: 11px; color: var(--text-tertiary); margin-top: 8px; }
+  .ans-err     { color: #FF6B1A; font-size: 13px; }
+
+  /* ── Next steps ──────────────────────────────────────── */
+  .nextsteps-card { background: var(--bg-1); }
+  .nextstep-grid  {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+  }
+  @media(max-width: 860px) { .nextstep-grid { grid-template-columns: 1fr; } }
+  .nextstep-item {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-decoration: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    transition: background 0.15s;
+    color: inherit;
+  }
+  .nextstep-item:hover { background: var(--bg-3); border-color: var(--border-bright); }
+  .ns-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .ns-en { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .ns-ta { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- SECTION 1: Education strip -->
+<div class="owner-edu-strip">
+  <h2>Is your building plan ready for approval?</h2>
+  <p class="edu-ta">உங்கள் கட்டிட திட்டம் அனுமதிக்கு தயாரா?</p>
+  <p class="edu-desc">
+    Upload a photo of your sketch. Our AI reads the dimensions and checks
+    them against Tamil Nadu building rules (TNCDBR 2019) in seconds.
+    You will see exactly what passes and what needs fixing — in Tamil or English.
+  </p>
+  <div class="edu-steps">
+    <div class="edu-step"><span class="step-n">1</span>Upload sketch</div>
+    <span class="step-arr">→</span>
+    <div class="edu-step"><span class="step-n">2</span>AI reads dimensions</div>
+    <span class="step-arr">→</span>
+    <div class="edu-step"><span class="step-n">3</span>See what passes/fails</div>
+    <span class="step-arr">→</span>
+    <div class="edu-step"><span class="step-n">4</span>Ask in Tamil</div>
+  </div>
+</div>
+
+<!-- SECTION 2: Upload hero -->
+<div class="upload-hero" id="upload-zone"
+     ondragover="event.preventDefault()"
+     ondrop="handleDrop(event)">
+  <div class="uh-icon">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+  </div>
+  <div class="uh-title">
+    Upload your building sketch or plan
+    <div class="uh-ta">உங்கள் கட்டிட வரைபடம் அல்லது திட்டத்தை பதிவேற்றுங்கள்</div>
+  </div>
+  <div class="uh-hint">Any photo, WhatsApp screenshot, or scan works</div>
+  <label class="uh-btn">
+    <input type="file" id="sketch-input" accept="image/*"
+           style="display:none" onchange="handleUpload(this.files[0])">
+    Choose image / படம் தேர்வு
+  </label>
+</div>
+
+<!-- SECTION 3: Loading state -->
+<div id="ocr-loading" style="display:none" class="owner-loading">
+  <div class="owner-spinner"></div>
+  <div class="loading-msg">Reading your sketch...</div>
+  <div class="loading-msg-ta">AI உங்கள் படத்திலிருந்து அளவுகளை படிக்கிறது...</div>
+</div>
+
+<!-- SECTION 4: Results panel -->
+<div id="results-panel" style="display:none">
+
+  <!-- Overall status banner -->
+  <div class="status-banner" id="status-banner">
+    <div>
+      <div id="status-msg-en" class="status-msg-en"></div>
+      <div id="status-msg-ta" class="status-msg-ta"></div>
+    </div>
+    <div id="status-badge" class="status-badge"></div>
+  </div>
+
+  <!-- Extracted fields -->
+  <div class="owner-card" id="extracted-section">
+    <div class="owner-card-title">
+      What we read from your sketch
+      <span class="card-title-ta">உங்கள் வரைபடத்திலிருந்து படித்தது</span>
+    </div>
+    <div id="extracted-grid" class="extracted-grid"></div>
+    <div id="smart-questions" class="smart-questions"></div>
+  </div>
+
+  <!-- Rule-by-rule check -->
+  <div class="owner-card" id="rules-section">
+    <div class="owner-card-title">
+      Rule check — one by one
+      <span class="card-title-ta">விதி வாரியாக சரிபார்ப்பு</span>
+    </div>
+    <div id="rule-list" class="rule-list"></div>
+  </div>
+
+  <!-- Fixes needed -->
+  <div class="owner-card" id="fixes-section" style="display:none">
+    <div class="owner-card-title" style="color:#FF6B1A">
+      What to fix before applying
+      <span class="card-title-ta" style="color:var(--text-secondary)">விண்ணப்பிப்பதற்கு முன் சரிசெய்க</span>
+    </div>
+    <div id="fix-list" class="fix-list"></div>
+  </div>
+
+  <!-- Ask a question -->
+  <div class="owner-card ask-card">
+    <div class="owner-card-title">
+      Have a question? Ask in Tamil or English
+      <span class="card-title-ta">கேள்வி உள்ளதா? தமிழிலோ ஆங்கிலத்திலோ கேளுங்கள்</span>
+    </div>
+    <div class="ask-row">
+      <input type="text" id="ask-input" class="ask-input"
+             placeholder="e.g. What is setback? / இடைவெளி என்றால் என்ன?">
+      <button class="ask-btn" onclick="askQuestion()">Ask / கேளு</button>
+    </div>
+    <div id="ask-answer" style="display:none" class="ask-answer"></div>
+  </div>
+
+  <!-- Next steps -->
+  <div class="owner-card nextsteps-card">
+    <div class="owner-card-title">
+      What to do next
+      <span class="card-title-ta">அடுத்து என்ன செய்வது</span>
+    </div>
+    <div class="nextstep-grid">
+      <a href="#" onclick="downloadChecklist(); return false;" class="nextstep-item">
+        <div class="ns-num">1</div>
+        <div>
+          <div class="ns-en">Download document checklist</div>
+          <div class="ns-ta">ஆவண பட்டியல் பதிவிறக்கம்</div>
+        </div>
+      </a>
+      <a href="/buildiq" class="nextstep-item">
+        <div class="ns-num">2</div>
+        <div>
+          <div class="ns-en">Full AI analysis with PDF sources</div>
+          <div class="ns-ta">PDF ஆதாரங்களுடன் முழு AI பகுப்பாய்வு</div>
+        </div>
+      </a>
+      <a href="/buildiq#marketplace" class="nextstep-item">
+        <div class="ns-num">3</div>
+        <div>
+          <div class="ns-en">Connect with architect — ₹999</div>
+          <div class="ns-ta">கட்டிட வடிவமைப்பாளரை தொடர்பு கொள்ளுங்கள்</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+const BUILDIQ = '{{ buildiq_url }}';
+
+const STATUS_TEXT = {
+  PASS: {
+    en: 'Your plan looks good — ready to proceed.',
+    ta: 'உங்கள் திட்டம் நல்லது — தொடரலாம்.'
+  },
+  MARGINAL: {
+    en: 'Almost there — a few small things to fix.',
+    ta: 'கிட்டத்தட்ட சரி — சில சிறிய திருத்தங்கள் தேவை.'
+  },
+  FAIL: {
+    en: 'Some rules are not met — see what to fix below.',
+    ta: 'சில விதிகள் பூர்த்தி ஆகவில்லை — கீழே திருத்தங்களைப் பாருங்கள்.'
+  }
+};
+
+const RULE_INFO = {
+  setback: {
+    en: 'Setback — space from boundary',
+    ta: 'இடைவெளி — எல்லையிலிருந்து இடம்',
+    explain: 'The required gap between your building walls and the plot boundary or road edge.'
+  },
+  far: {
+    en: 'FAR — how much you can build',
+    ta: 'FAR — கட்ட அனுமதிக்கப்பட்ட பரப்பு',
+    explain: 'Floor Area Ratio: total built-up area divided by plot area. Max 2.0 for residential.'
+  },
+  coverage: {
+    en: 'Plot coverage — ground floor footprint',
+    ta: 'மனை உள்ளடக்கம் — தரை தளம்',
+    explain: 'How much of the plot is covered by the ground floor building. Maximum 65%.'
+  },
+  height: {
+    en: 'Building height',
+    ta: 'கட்டடம் உயரம்',
+    explain: 'Maximum allowed building height is 14 metres for non-high-rise residential buildings.'
+  },
+  parking: {
+    en: 'Parking spaces',
+    ta: 'வாகன நிறுத்துமிடம்',
+    explain: 'Minimum number of car parking spaces required based on number of residential units.'
+  }
+};
+
+const FIELD_LABELS = {
+  road_width_ft:       ['Road width',    'சாலை அகலம்',    'ft'],
+  plot_width_ft:       ['Plot width',    'மனை அகலம்',     'ft'],
+  plot_depth_ft:       ['Plot depth',    'மனை ஆழம்',      'ft'],
+  plot_area_sqm:       ['Plot area',     'மனை பரப்பு',    'sq.m'],
+  front_setback_m:     ['Front setback', 'முன் இடைவெளி',  'm'],
+  rear_setback_m:      ['Rear setback',  'பின் இடைவெளி',  'm'],
+  side_setback_m:      ['Side setback',  'பக்க இடைவெளி', 'm'],
+  proposed_floors:     ['Floors',        'மாடிகள்',        ''],
+  building_type:       ['Building type', 'கட்டடம் வகை',   ''],
+  proposed_height_m:   ['Height',        'உயரம்',           'm']
+};
+
+async function handleUpload(file) {
+  if (!file) return;
+  document.getElementById('upload-zone').style.display = 'none';
+  document.getElementById('ocr-loading').style.display = 'flex';
+  document.getElementById('results-panel').style.display = 'none';
+
+  const form = new FormData();
+  form.append('file', file);
+
+  try {
+    // Step 1: OCR
+    const ocrRes = await fetch(`${BUILDIQ}/api/demo-ocr`, {method: 'POST', body: form});
+    if (!ocrRes.ok) throw new Error('Could not read image — try a clearer photo');
+    const ocr = await ocrRes.json();
+    const ext = ocr.extracted || {};
+    const questions = ocr.smart_questions || [];
+
+    // Step 2: Build compliance payload from extracted fields
+    const payload = {
+      road_width_ft:        ext.road_width_ft         || 20,
+      provided_front_m:     ext.front_setback_m       || 1.5,
+      provided_rear_m:      ext.rear_setback_m         || 1.5,
+      provided_side_m:      ext.side_setback_m         || 1.0,
+      plot_area_sqm:        ext.plot_area_sqm          || 100,
+      proposed_builtup_sqm: ext.proposed_builtup_sqm   || 150,
+      footprint_sqm:        ext.footprint_sqm           || 75,
+      proposed_height_m:    ext.proposed_height_m       || 6.0,
+      floors:               ext.proposed_floors          || 2,
+      zone_type:            'residential_R1',
+      building_type:        ext.building_type            || 'residential',
+      proposed_spaces:      1,
+      num_units:            1,
+      authority:            'CCMC'
+    };
+
+    // Step 3: Compliance check
+    const compRes = await fetch(`${BUILDIQ}/api/demo-check`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if (!compRes.ok) throw new Error('Compliance check failed');
+    const comp = await compRes.json();
+
+    document.getElementById('ocr-loading').style.display = 'none';
+    renderResults(ext, questions, comp);
+
+  } catch (e) {
+    document.getElementById('ocr-loading').style.display = 'none';
+    document.getElementById('upload-zone').style.display = 'block';
+    // Remove any previous error
+    const prev = document.querySelector('.upload-error');
+    if (prev) prev.remove();
+    document.getElementById('upload-zone').insertAdjacentHTML(
+      'beforeend',
+      `<div class="upload-error">Error: ${e.message}</div>`
+    );
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) handleUpload(f);
+}
+
+function renderResults(ext, questions, comp) {
+  document.getElementById('results-panel').style.display = 'block';
+
+  // ── Status banner
+  const st = comp.overall_status || 'UNKNOWN';
+  const stInfo = STATUS_TEXT[st] || {en: st, ta: ''};
+  const stTA = {PASS: 'தேர்ச்சி', MARGINAL: 'கிட்டத்தட்ட', FAIL: 'தோல்வி'};
+
+  document.getElementById('status-msg-en').textContent = stInfo.en;
+  document.getElementById('status-msg-ta').textContent = stInfo.ta;
+
+  const badge = document.getElementById('status-badge');
+  badge.textContent = `${st} / ${stTA[st] || ''}`;
+  badge.className = `status-badge badge-${st.toLowerCase()}`;
+  document.getElementById('status-banner').className =
+    `status-banner banner-${st.toLowerCase()}`;
+
+  // ── Extracted fields grid
+  const grid = document.getElementById('extracted-grid');
+  grid.innerHTML = '';
+  for (const [key, [en, ta, unit]] of Object.entries(FIELD_LABELS)) {
+    const val = ext[key];
+    if (val !== null && val !== undefined) {
+      grid.innerHTML += `
+        <div class="ext-field">
+          <div class="ext-label">${en}<span class="ext-ta-label">${ta}</span></div>
+          <div class="ext-val">${val}${unit ? ' ' + unit : ''}</div>
+        </div>`;
+    }
+  }
+
+  // ── Smart questions for missing fields
+  const sqDiv = document.getElementById('smart-questions');
+  sqDiv.innerHTML = '';
+  if (questions.length > 0) {
+    sqDiv.innerHTML = `
+      <div class="sq-title">
+        We could not read these — please fill in:
+        <span class="sq-ta">இவற்றை படிக்கவில்லை — நிரப்புங்கள்:</span>
+      </div>` +
+      questions.map(q => `
+        <div class="sq-item">
+          <label class="sq-label">${q.question}</label>
+          <input type="${q.type === 'number' ? 'number' : 'text'}"
+                 class="sq-input"
+                 placeholder="${q.hint || ''}"
+                 onchange="window.userInputs = window.userInputs || {};
+                           window.userInputs['${q.field}'] = this.value">
+        </div>`).join('');
+  }
+
+  // ── Rule cards
+  const ruleDiv = document.getElementById('rule-list');
+  ruleDiv.innerHTML = '';
+  const fixes = [];
+  const results = comp.results || {};
+
+  for (const [rule, info] of Object.entries(RULE_INFO)) {
+    const data = results[rule] || {};
+    const conf = (data.confidence !== undefined) ? data.confidence
+               : (data.score !== undefined)      ? data.score
+               : 0;
+    const pct = Math.round(conf * 100);
+    const passed   = pct >= 75;
+    const marginal = pct >= 50 && pct < 75;
+    const color    = passed ? '#39FF82' : marginal ? '#FFD600' : '#FF6B1A';
+    const verdict  = passed ? 'Good ✓' : marginal ? 'Almost' : 'Needs fix';
+    const verdictTA = passed ? 'சரி ✓' : marginal ? 'கிட்டத்தட்ட' : 'சரிசெய்க';
+
+    if (!passed && data.fix_suggestion) {
+      fixes.push({rule: info.en, fix: data.fix_suggestion});
+    }
+
+    ruleDiv.innerHTML += `
+      <div class="rule-card" style="border-left-color:${color}">
+        <div class="rule-top">
+          <div>
+            <div class="rule-name">${info.en}</div>
+            <div class="rule-name-ta">${info.ta}</div>
+          </div>
+          <div class="rule-verdict" style="color:${color}">
+            ${verdict} / ${verdictTA}
+          </div>
+        </div>
+        <div class="rule-bar-row">
+          <div class="rule-bar-bg">
+            <div class="rule-bar-fill" style="width:${pct}%;background:${color}"></div>
+          </div>
+          <span class="rule-pct" style="color:${color}">${pct}%</span>
+        </div>
+        <div class="rule-edu">${info.explain}</div>
+        ${!passed && data.fix_suggestion ? `
+          <div class="rule-fix-inline">Fix: ${data.fix_suggestion}</div>` : ''}
+      </div>`;
+  }
+
+  // ── Fixes panel
+  if (fixes.length > 0) {
+    document.getElementById('fixes-section').style.display = 'block';
+    document.getElementById('fix-list').innerHTML = fixes.map((f, i) => `
+      <div class="fix-item">
+        <div class="fix-num">${i + 1}</div>
+        <div>
+          <div class="fix-rule">${f.rule}</div>
+          <div class="fix-text">${f.fix}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    document.getElementById('fixes-section').style.display = 'none';
+  }
+}
+
+async function askQuestion() {
+  const q = document.getElementById('ask-input').value.trim();
+  if (!q) return;
+  const ans = document.getElementById('ask-answer');
+  ans.style.display = 'block';
+  ans.innerHTML = '<div class="ans-loading">Thinking... சிந்திக்கிறேன்...</div>';
+  const isTamil = /[\u0B80-\u0BFF]/.test(q);
+  try {
+    const r = await fetch(`${BUILDIQ}/api/explain-rule`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question: q, language: isTamil ? 'ta' : 'en'})
+    });
+    const d = await r.json();
+    const text = d.answer || d.response || d.explanation || 'No answer found.';
+    const srcs = d.sources || [];
+    ans.innerHTML = `
+      <div class="ans-text">${text}</div>
+      ${srcs.length ? `<div class="ans-src">
+        Source: ${srcs.map(s => s.source || 'TNCDBR 2019').join(', ')}
+      </div>` : ''}`;
+  } catch (e) {
+    ans.innerHTML = '<div class="ans-err">Could not get answer. Is BuildIQ running?</div>';
+  }
+}
+
+function downloadChecklist() {
+  const txt = `BUILDING PLAN DOCUMENT CHECKLIST — BuildIQ
+==========================================
+REQUIRED DOCUMENTS FOR CCMC SUBMISSION:
+
+1. Sale Deed / Title Deed
+   Must be registered. Owner name must match application.
+
+2. Patta / Chitta (Revenue Records)
+   Must reflect current owner. Get from Taluk office.
+
+3. Encumbrance Certificate (EC)
+   Must be issued within 30 days of submission date.
+   APPLY NOW if yours is older than 25 days.
+
+4. FMB Sketch (Field Measurement Book)
+   From Taluk office. Must match exact plot boundaries.
+
+5. Property Tax Receipt
+   Latest paid receipt. Must show no arrears.
+
+6. Aadhaar / ID Proof
+   Self-attested copy.
+
+7. Site Plan (DXF or PDF format)
+   Must be prepared by TNCA registered architect.
+   Shows plot boundaries, setbacks, north direction.
+
+8. Building Plan (DXF format)
+   Floor plans, elevation, section — all floors.
+
+CONTACT CCMC: 0422-2390261
+ONLINE: ccmc.gov.in
+
+NEXT STEP: Connect with a registered architect
+at /buildiq for \u20b9999 end-to-end submission.
+`;
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([txt], {type: 'text/plain'})),
+    download: 'BuildIQ_Document_Checklist.txt'
+  });
+  a.click();
+}
+</script>
+{% endblock %}

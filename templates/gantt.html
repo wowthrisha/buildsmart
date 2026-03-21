@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Project Gantt — BuildSmart{% endblock %}
+{% block breadcrumb %}Gantt Chart{% endblock %}
+
+{% block extra_css %}
+  /* ── Stage colors ──────────────────────────────── */
+  .stage-draft            { background: #555; }
+  .stage-compliance       { background: #2979FF; }
+  .stage-submitted        { background: #FFD600; }
+  .stage-authority-review { background: #FF8C00; }
+  .stage-approved         { background: #39FF82; }
+
+  /* ── Page header buttons ───────────────────────── */
+  .btn-ghost-sm {
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--bg-2);
+    color: var(--text-secondary); font-size: 13px; font-weight: 500;
+    text-decoration: none; transition: all .2s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-ghost-sm:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+
+  .btn-accent-sm {
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    background: var(--accent); color: #000; border: none;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    box-shadow: 0 0 14px var(--accent-glow); transition: all .2s;
+  }
+  .btn-accent-sm:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+  /* ── Gantt container ───────────────────────────── */
+  .gantt-wrap {
+    background: var(--bg-1); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+
+  .gantt-container {
+    overflow-x: auto; min-width: 0;
+  }
+  .gantt-container::-webkit-scrollbar { height: 5px; }
+  .gantt-container::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
+
+  /* ── Shared row layout ─────────────────────────── */
+  .gantt-header,
+  .gantt-row {
+    display: flex;
+    align-items: center;
+    min-width: 700px;
+  }
+
+  .gantt-header {
+    border-bottom: 1px solid var(--border-bright);
+    background: var(--bg-2);
+    padding: 10px 0;
+  }
+
+  .gantt-row {
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .gantt-row:last-child { border-bottom: none; }
+  .gantt-row:hover { background: var(--bg-2); }
+  .gantt-row.gantt-overdue { background: rgba(239,68,68,.03); }
+  .gantt-row.gantt-overdue:hover { background: rgba(239,68,68,.06); }
+
+  /* ── Column widths ─────────────────────────────── */
+  .gantt-label-col {
+    width: 220px; flex-shrink: 0;
+    padding: 0 16px;
+    font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+    text-transform: uppercase; letter-spacing: .8px;
+  }
+
+  .gantt-label {
+    width: 220px; flex-shrink: 0;
+    padding: 0 16px; min-width: 0;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .gantt-label a {
+    font-size: 12.5px; font-weight: 500; color: var(--text-primary);
+    text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: color .2s;
+  }
+  .gantt-label a:hover { color: var(--accent); }
+
+  .badge-overdue {
+    display: inline-block; font-size: 9.5px; font-weight: 600;
+    padding: 1px 6px; border-radius: 20px;
+    background: rgba(239,68,68,.15); color: #ef4444;
+    letter-spacing: .3px;
+  }
+
+  /* ── Bar column ────────────────────────────────── */
+  .gantt-bar-col {
+    flex: 1; position: relative; height: 28px;
+    padding: 0 12px;
+  }
+
+  /* ── Axis (header bar column) ──────────────────── */
+  #gantt-axis {
+    flex: 1; position: relative; height: 28px;
+    padding: 0 12px; overflow: hidden;
+  }
+  .axis-label {
+    position: absolute; top: 6px;
+    font-size: 10px; color: var(--text-tertiary);
+    white-space: nowrap; transform: translateX(-50%);
+    font-family: 'DM Mono', monospace;
+  }
+  .axis-tick {
+    position: absolute; top: 0; bottom: 0;
+    width: 1px; background: var(--border);
+  }
+
+  /* ── Bar track ─────────────────────────────────── */
+  .gantt-bar-track {
+    position: relative; width: 100%; height: 100%;
+  }
+
+  /* ── Individual bar ────────────────────────────── */
+  .gantt-bar-bg {
+    position: absolute; top: 0; height: 100%;
+    background: var(--bg-3); border-radius: 4px;
+    overflow: hidden; border: 1px solid var(--border);
+    min-width: 6px;
+  }
+
+  .gantt-bar-progress {
+    height: 100%; border-radius: 4px;
+    transition: width .4s ease; opacity: .85;
+  }
+
+  .gantt-bar-label {
+    position: absolute; right: 8px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px; font-weight: 500;
+    white-space: nowrap; color: rgba(255,255,255,.7);
+    pointer-events: none; mix-blend-mode: screen;
+  }
+
+  /* ── Date column ───────────────────────────────── */
+  .gantt-dates {
+    width: 180px; flex-shrink: 0;
+    padding: 0 16px;
+    display: flex; flex-direction: column; gap: 2px;
+    font-size: 10.5px; color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+  }
+  .gantt-dates-hdr {
+    width: 180px; flex-shrink: 0; padding: 0 16px;
+    font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+    text-transform: uppercase; letter-spacing: .8px;
+  }
+
+  /* ── Empty state ───────────────────────────────── */
+  .gantt-empty {
+    padding: 60px 32px; text-align: center;
+    color: var(--text-tertiary); font-size: 13px;
+  }
+
+  /* ── Stage legend ──────────────────────────────── */
+  .stage-legend {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    font-size: 11.5px; color: var(--text-secondary);
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+  }
+
+  /* ── Create project modal ──────────────────────── */
+  #create-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.75);
+    display: none; place-items: center; z-index: 5000;
+    backdrop-filter: blur(8px); padding: 20px;
+  }
+  #create-modal.open { display: grid; }
+  #create-modal .mc {
+    background: var(--bg-1); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 32px; width: 100%; max-width: 460px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5);
+  }
+  #create-modal .mc h2 {
+    font-family: 'Cormorant Garamond', serif; font-size: 26px;
+    font-weight: 300; margin-bottom: 24px; letter-spacing: -.5px;
+  }
+  .modal-field { margin-bottom: 16px; }
+  .modal-field label {
+    display: block; font-size: 10.5px; font-weight: 600;
+    color: var(--text-tertiary); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 7px;
+  }
+  .modal-field input,
+  .modal-field textarea {
+    width: 100%; background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 14px; color: var(--text-primary);
+    font: inherit; font-size: 13px; transition: border-color .2s;
+  }
+  .modal-field input:focus,
+  .modal-field textarea:focus { border-color: var(--accent); outline: none; }
+  .modal-date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions {
+    display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 24px;
+  }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">M5 — Project Timeline</div>
+    <h1 class="page-title">Gantt Chart</h1>
+    <p class="page-subtitle">Visual timeline of all projects — stages, deadlines, and schedule health at a glance.</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <a href="{{ url_for('timeline.projects') }}" class="btn-ghost-sm">
+      <svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
+      Project List
+    </a>
+    <button class="btn-accent-sm" onclick="document.getElementById('create-modal').classList.add('open')">
+      <svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Project
+    </button>
+  </div>
+</div>
+
+<!-- Stage legend -->
+<div class="stage-legend">
+  {% for label, cls in [('Draft','stage-draft'),('Compliance','stage-compliance'),('Submitted','stage-submitted'),('Authority Review','stage-authority-review'),('Approved','stage-approved')] %}
+  <div class="legend-item">
+    <div class="legend-dot {{ cls }}"></div>
+    <span>{{ label }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Gantt board -->
+<div class="gantt-wrap">
+  <div class="gantt-container">
+
+    <!-- Header row -->
+    <div class="gantt-header">
+      <div class="gantt-label-col">Project</div>
+      <div id="gantt-axis"><!-- month labels injected by JS --></div>
+      <div class="gantt-dates-hdr">Dates</div>
+    </div>
+
+    {% if gantt_data %}
+      {% for proj in gantt_data %}
+      <div class="gantt-row {% if proj.overdue %}gantt-overdue{% endif %}">
+        <div class="gantt-label">
+          <a href="{{ url_for('timeline.timeline', project_id=proj.id) }}"
+             title="{{ proj.name }}">{{ proj.name[:28] }}{% if proj.name|length > 28 %}…{% endif %}</a>
+          {% if proj.overdue %}<span class="badge-overdue">Overdue</span>{% endif %}
+        </div>
+        <div class="gantt-bar-col">
+          <div class="gantt-bar-track">
+            <div class="gantt-bar-bg"
+                 data-start="{{ proj.start_ts }}"
+                 data-end="{{ proj.end_ts }}">
+              <div class="gantt-bar-progress {{ 'stage-' ~ proj.stage.lower().replace(' ', '-') }}"
+                   style="width:{{ proj.progress }}%"></div>
+              <div class="gantt-bar-label">{{ proj.stage }} · {{ proj.progress }}%</div>
+            </div>
+          </div>
+        </div>
+        <div class="gantt-dates">
+          <span>{{ proj.start }}</span>
+          <span style="color:{% if proj.overdue %}#ef4444{% else %}var(--text-tertiary){% endif %}">→ {{ proj.end }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="gantt-empty">No projects yet. Create one using the button above.</div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Create Project modal -->
+<div id="create-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="mc">
+    <h2>New Project</h2>
+    <form action="{{ url_for('timeline.create_project') }}" method="POST">
+      <div class="modal-field">
+        <label>Project Name *</label>
+        <input type="text" name="name" required placeholder="e.g. North Block Commercial Tower">
+      </div>
+      <div class="modal-field">
+        <label>Description</label>
+        <textarea name="description" rows="3" placeholder="Short summary of the project..."></textarea>
+      </div>
+      <div class="modal-field modal-date-row">
+        <div>
+          <label>Start Date</label>
+          <input type="date" name="start_date" value="{{ today_str }}">
+        </div>
+        <div>
+          <label>Due Date</label>
+          <input type="date" name="due_date">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal-ghost"
+                onclick="document.getElementById('create-modal').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn-modal-primary">Create Project</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chartStart = {{ chart_start }};
+const chartEnd   = {{ chart_end }};
+const totalMs    = Math.max(chartEnd - chartStart, 1);
+
+// Position bars within their track
+document.querySelectorAll('.gantt-bar-bg').forEach(bar => {
+  const s = parseFloat(bar.dataset.start);
+  const e = parseFloat(bar.dataset.end);
+  const left  = Math.max(0, (s - chartStart) / totalMs * 100);
+  const width = Math.min(100 - left, Math.max((e - s) / totalMs * 100, 0.5));
+  bar.style.left  = left.toFixed(2) + '%';
+  bar.style.width = width.toFixed(2) + '%';
+});
+
+// Generate month axis labels
+const axis = document.getElementById('gantt-axis');
+if (axis && totalMs > 0) {
+  const start = new Date(chartStart);
+  const end   = new Date(chartEnd);
+  let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cur <= end) {
+    const pct = ((cur.getTime() - chartStart) / totalMs * 100);
+    if (pct >= 0 && pct <= 100) {
+      const tick = document.createElement('div');
+      tick.className = 'axis-tick';
+      tick.style.left = pct.toFixed(2) + '%';
+      axis.appendChild(tick);
+
+      const label = document.createElement('span');
+      label.className = 'axis-label';
+      label.style.left = pct.toFixed(2) + '%';
+      label.textContent = cur.toLocaleString('default', { month: 'short', year: '2-digit' });
+      axis.appendChild(label);
+    }
+    cur.setMonth(cur.getMonth() + 1);
+  }
+}
+</script>
+{% endblock %}

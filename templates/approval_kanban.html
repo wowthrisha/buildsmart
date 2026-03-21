@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}Kanban Board — BuildSmart{% endblock %}
+{% block breadcrumb %}Kanban Board{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Column status colors ───────────────────── */
+  :root {
+    --c-pending:   #FFD600;
+    --c-review:    #2979FF;
+    --c-approved:  #39FF82;
+    --c-rejected:  #ef4444;
+    --c-escalated: #FF6B1A;
+  }
+
+  /* ── Page header actions ────────────────────── */
+  .page-header-actions { display: flex; align-items: center; gap: 10px; }
+  .btn-ghost {
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--bg-2);
+    color: var(--text-secondary); font-size: 13px; font-weight: 500;
+    text-decoration: none; transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+
+  /* ── WIP legend ─────────────────────────────── */
+  .wip-legend {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: 12px; color: var(--text-tertiary);
+  }
+  .wip-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  }
+  .wip-warning { background: rgba(41,121,255,.12); color: #2979FF; border: 1px solid rgba(41,121,255,.2); }
+  .wip-danger  { background: rgba(255,107,26,.12);  color: #FF6B1A; border: 1px solid rgba(255,107,26,.2); }
+
+  /* ── Kanban board layout ────────────────────── */
+  .kanban-board {
+    display: flex; gap: 14px;
+    overflow-x: auto; overflow-y: visible;
+    min-height: 520px; padding-bottom: 16px;
+    align-items: flex-start;
+  }
+  .kanban-board::-webkit-scrollbar { height: 5px; }
+  .kanban-board::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
+
+  /* ── Column ─────────────────────────────────── */
+  .kanban-col {
+    width: 230px; flex-shrink: 0;
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    transition: border-color .2s;
+  }
+  .kanban-col.drag-over {
+    border-color: var(--accent);
+    border-style: dashed;
+    background: var(--accent-subtle);
+  }
+
+  /* ── Column header ──────────────────────────── */
+  .col-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; font-size: 12px; font-weight: 600;
+    letter-spacing: .3px;
+  }
+  .col-pending   { background: rgba(255,214,0,.1);   color: var(--c-pending);   border-bottom: 1px solid rgba(255,214,0,.15); }
+  .col-under-review { background: rgba(41,121,255,.1); color: var(--c-review);  border-bottom: 1px solid rgba(41,121,255,.15); }
+  .col-approved  { background: rgba(57,255,130,.1);  color: var(--c-approved);  border-bottom: 1px solid rgba(57,255,130,.15); }
+  .col-rejected  { background: rgba(239,68,68,.1);   color: var(--c-rejected);  border-bottom: 1px solid rgba(239,68,68,.15); }
+  .col-escalated { background: rgba(255,107,26,.1);  color: var(--c-escalated); border-bottom: 1px solid rgba(255,107,26,.15); }
+
+  .col-count {
+    font-size: 11px; font-weight: 700; padding: 2px 7px;
+    border-radius: 20px; background: rgba(255,255,255,.07);
+    color: inherit; transition: color .2s, background .2s;
+  }
+  .col-count.wip-exceeded { color: var(--c-rejected); background: rgba(239,68,68,.15); }
+
+  /* ── Column body ────────────────────────────── */
+  .col-body {
+    padding: 8px; min-height: 120px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .col-empty {
+    padding: 28px 12px; text-align: center;
+    font-size: 12px; color: var(--text-tertiary);
+    border: 1px dashed var(--border); border-radius: 8px;
+  }
+
+  /* ── Card ───────────────────────────────────── */
+  .kanban-card {
+    background: var(--bg-1); border: 1px solid var(--border);
+    border-radius: 9px; padding: 0;
+    cursor: grab; transition: transform .15s, box-shadow .15s, opacity .15s;
+    display: flex; align-items: stretch;
+    user-select: none;
+  }
+  .kanban-card:hover {
+    border-color: var(--border-bright);
+    box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    transform: translateY(-1px);
+  }
+  .kanban-card.dragging {
+    opacity: .4; transform: scale(.97); cursor: grabbing;
+  }
+
+  /* Left border accent by status */
+  .kanban-card[data-status="Pending"]      { border-left: 3px solid var(--c-pending); }
+  .kanban-card[data-status="Under Review"] { border-left: 3px solid var(--c-review); }
+  .kanban-card[data-status="Approved"]     { border-left: 3px solid var(--c-approved); }
+  .kanban-card[data-status="Rejected"]     { border-left: 3px solid var(--c-rejected); }
+  .kanban-card[data-status="Escalated"]    { border-left: 3px solid var(--c-escalated); }
+
+  /* Flash animation after successful move */
+  @keyframes cardFlash {
+    0%   { box-shadow: 0 0 0 0 rgba(57,255,130,0); background: var(--bg-1); }
+    30%  { box-shadow: 0 0 14px 2px rgba(57,255,130,.35); background: rgba(57,255,130,.06); }
+    100% { box-shadow: 0 0 0 0 rgba(57,255,130,0); background: var(--bg-1); }
+  }
+  .kanban-card.card-moved { animation: cardFlash .8s ease forwards; }
+
+  /* ── Drag handle ────────────────────────────── */
+  .card-drag-handle {
+    padding: 12px 6px 12px 8px;
+    color: var(--text-tertiary); font-size: 11px; letter-spacing: -1px;
+    line-height: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1px;
+    flex-shrink: 0;
+  }
+  .kanban-card:hover .card-drag-handle { color: var(--text-secondary); }
+
+  /* ── Card body ──────────────────────────────── */
+  .card-body { flex: 1; padding: 10px 10px 10px 4px; min-width: 0; }
+
+  .card-title {
+    font-size: 12.5px; font-weight: 500; color: var(--text-primary);
+    line-height: 1.4; margin-bottom: 8px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .card-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+
+  .badge-project {
+    font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px;
+    background: var(--bg-3); color: var(--text-secondary); border: 1px solid var(--border);
+  }
+  .badge-risk {
+    font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px;
+  }
+  .risk-low    { background: rgba(57,255,130,.12); color: var(--c-approved); }
+  .risk-medium { background: rgba(255,214,0,.12);  color: var(--c-pending); }
+  .risk-high   { background: rgba(239,68,68,.12);  color: var(--c-rejected); }
+
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 1px solid var(--border); padding-top: 7px; margin-top: 4px;
+  }
+  .deadline {
+    font-size: 10.5px; font-family: 'DM Mono', monospace;
+    color: var(--text-secondary);
+  }
+  .deadline.overdue { color: var(--c-rejected); font-weight: 600; }
+  .deadline.no-date { color: var(--text-tertiary); }
+  .card-link {
+    font-size: 10.5px; color: var(--accent); text-decoration: none;
+    opacity: .7; transition: opacity .2s;
+  }
+  .card-link:hover { opacity: 1; }
+
+  /* ── Toast ──────────────────────────────────── */
+  .kanban-toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+    padding: 11px 20px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; min-width: 220px;
+    transform: translateY(20px); opacity: 0;
+    transition: transform .3s ease, opacity .3s ease;
+    pointer-events: none;
+  }
+  .kanban-toast.show { transform: translateY(0); opacity: 1; }
+  .kanban-toast.error   { background: #ef4444; color: #fff; box-shadow: 0 8px 24px rgba(239,68,68,.4); }
+  .kanban-toast.success { background: #39FF82; color: #000; box-shadow: 0 8px 24px rgba(57,255,130,.4); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow">M1 — Approval Flow</div>
+    <h1 class="page-title">Kanban Board</h1>
+    <p class="page-subtitle">Drag cards across columns to transition approval states in real time.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('approval.queue') }}" class="btn-ghost">
+      <svg viewBox="0 0 24 24" width="13" height="13" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Queue View
+    </a>
+  </div>
+</div>
+
+<!-- WIP legend -->
+<div class="wip-legend">
+  <span>WIP limits active:</span>
+  <span class="wip-badge wip-warning">Under Review — max 5</span>
+  <span class="wip-badge wip-danger">Escalated — max 3</span>
+</div>
+
+<!-- Kanban board -->
+<div class="kanban-board" id="kanban-board">
+  {% for column_name, cards in columns.items() %}
+  {% set col_slug = column_name.lower().replace(' ', '-') %}
+  <div class="kanban-col"
+       data-status="{{ column_name }}"
+       data-wip="{{ wip_limits[column_name] or '' }}"
+       ondragover="handleDragOver(event)"
+       ondrop="handleDrop(event)"
+       ondragenter="handleDragEnter(event)"
+       ondragleave="handleDragLeave(event)">
+
+    <div class="col-header col-{{ col_slug }}">
+      <span class="col-name">{{ column_name }}</span>
+      <span class="col-count {% if wip_limits[column_name] and cards|length >= wip_limits[column_name] %}wip-exceeded{% endif %}"
+            id="count-{{ col_slug }}">
+        {{ cards|length }}{% if wip_limits[column_name] %}/{{ wip_limits[column_name] }}{% endif %}
+      </span>
+    </div>
+
+    <div class="col-body" id="col-{{ col_slug }}">
+      {% for req in cards %}
+      <div class="kanban-card"
+           id="card-{{ req.id }}"
+           draggable="true"
+           data-id="{{ req.id }}"
+           data-status="{{ req.status }}"
+           ondragstart="handleDragStart(event)">
+
+        <div class="card-drag-handle">⋮<br>⋮<br>⋮</div>
+
+        <div class="card-body">
+          <div class="card-title" title="{{ req.title }}">{{ req.title[:45] }}{% if req.title|length > 45 %}…{% endif %}</div>
+
+          <div class="card-meta">
+            <span class="badge-project">
+              {% if req.project %}{{ req.project.name[:14] }}{% if req.project.name|length > 14 %}…{% endif %}{% else %}No project{% endif %}
+            </span>
+            <span class="badge-risk risk-{{ req.risk_label.lower() }}">{{ req.risk_label }}</span>
+          </div>
+
+          <div class="card-footer">
+            {% if req.deadline %}
+              {% if req.is_overdue %}
+                <span class="deadline overdue">Overdue</span>
+              {% else %}
+                <span class="deadline">{{ req.deadline.strftime('%d %b') }}</span>
+              {% endif %}
+            {% else %}
+              <span class="deadline no-date">No date</span>
+            {% endif %}
+            <a href="{{ url_for('approval.queue') }}?status={{ req.status }}" class="card-link">View →</a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-empty">No items</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Toast -->
+<div id="kanban-toast" class="kanban-toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let draggedCard = null;
+let draggedFromCol = null;
+
+function handleDragStart(e) {
+  draggedCard = e.currentTarget;
+  draggedFromCol = draggedCard.closest('.kanban-col');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', draggedCard.dataset.id);
+  // Defer so the browser snapshot isn't the faded version
+  setTimeout(() => draggedCard.classList.add('dragging'), 0);
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function handleDragEnter(e) {
+  e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const col = e.currentTarget;
+  col.classList.remove('drag-over');
+  if (!draggedCard) return;
+  draggedCard.classList.remove('dragging');
+
+  const newStatus = col.dataset.status;
+  const wipLimit = col.dataset.wip ? parseInt(col.dataset.wip) : null;
+  // Count current cards in target (before inserting)
+  const currentCount = col.querySelectorAll('.kanban-card').length;
+
+  // WIP check (only if moving into a different column)
+  if (wipLimit && draggedCard.dataset.status !== newStatus && currentCount >= wipLimit) {
+    showToast(`WIP limit reached for "${newStatus}" (max ${wipLimit})`);
+    draggedCard = null;
+    return;
+  }
+
+  // Same column — no-op
+  if (draggedCard.dataset.status === newStatus) {
+    draggedCard = null;
+    return;
+  }
+
+  const cardId = draggedCard.dataset.id;
+  const colBody = col.querySelector('.col-body');
+
+  // Remove "No items" placeholder if present
+  const empty = colBody.querySelector('.col-empty');
+  if (empty) empty.remove();
+
+  // Optimistic DOM update
+  colBody.appendChild(draggedCard);
+  const prevStatus = draggedCard.dataset.status;
+  draggedCard.dataset.status = newStatus;
+  // Update left border color
+  draggedCard.style.borderLeftColor = '';  // let CSS rule handle it via data-status
+
+  updateColCount(draggedFromCol);
+  updateColCount(col);
+
+  const movedCard = draggedCard;
+  const fromCol = draggedFromCol;
+  draggedCard = null;
+
+  fetch(`/approvals/${cardId}/move`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus })
+  })
+  .then(r => r.json().then(data => ({ ok: r.ok, data })))
+  .then(({ ok, data }) => {
+    if (!ok || data.error) {
+      // Revert
+      movedCard.dataset.status = prevStatus;
+      const fromBody = fromCol.querySelector('.col-body');
+      fromBody.appendChild(movedCard);
+      updateColCount(fromCol);
+      updateColCount(col);
+      showToast('Cannot move: ' + (data.error || 'Invalid transition'));
+    } else {
+      movedCard.classList.add('card-moved');
+      setTimeout(() => movedCard.classList.remove('card-moved'), 800);
+      showToast('Moved to ' + newStatus, 'success');
+      // Add empty placeholder to source col if now empty
+      const fromBody = fromCol.querySelector('.col-body');
+      if (!fromBody.querySelector('.kanban-card')) {
+        fromBody.innerHTML = '<div class="col-empty">No items</div>';
+      }
+    }
+  })
+  .catch(() => {
+    movedCard.dataset.status = prevStatus;
+    fromCol.querySelector('.col-body').appendChild(movedCard);
+    updateColCount(fromCol);
+    updateColCount(col);
+    showToast('Move failed — try again');
+  });
+}
+
+function updateColCount(col) {
+  if (!col) return;
+  const count = col.querySelectorAll('.kanban-card').length;
+  const wipLimit = col.dataset.wip ? parseInt(col.dataset.wip) : null;
+  const slug = col.dataset.status.toLowerCase().replace(' ', '-');
+  const badge = document.getElementById('count-' + slug);
+  if (badge) {
+    badge.textContent = wipLimit ? `${count}/${wipLimit}` : String(count);
+    badge.classList.toggle('wip-exceeded', wipLimit !== null && count >= wipLimit);
+  }
+}
+
+function showToast(msg, type = 'error') {
+  const t = document.getElementById('kanban-toast');
+  t.textContent = msg;
+  t.className = 'kanban-toast show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Remove dragging class if drop happens outside a valid target
+document.addEventListener('dragend', () => {
+  if (draggedCard) {
+    draggedCard.classList.remove('dragging');
+    draggedCard = null;
+  }
+  document.querySelectorAll('.kanban-col.drag-over').forEach(c => c.classList.remove('drag-over'));
+});
+</script>
+{% endblock %}

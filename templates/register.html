@@ -163,25 +163,14 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Professional Role</label>
-        <div class="role-grid">
-          <div>
-            <input type="radio" id="r-engineer" name="role" value="Engineer" class="role-option" checked>
-            <label for="r-engineer" class="role-label">Engineer</label>
-          </div>
-          <div>
-            <input type="radio" id="r-architect" name="role" value="Architect" class="role-option">
-            <label for="r-architect" class="role-label">Architect</label>
-          </div>
-          <div>
-            <input type="radio" id="r-contractor" name="role" value="Contractor" class="role-option">
-            <label for="r-contractor" class="role-label">Contractor</label>
-          </div>
-          <div>
-            <input type="radio" id="r-authority" name="role" value="Authority" class="role-option">
-            <label for="r-authority" class="role-label">Authority</label>
-          </div>
-        </div>
+        <label class="form-label">Role</label>
+        <select name="role" class="form-input">
+          <option value="Owner" selected>Owner — I own a plot or building</option>
+          <option value="Architect">Architect</option>
+          <option value="Engineer">Engineer</option>
+          <option value="Contractor">Contractor</option>
+          <option value="Authority">Authority</option>
+        </select>
       </div>
 
       <div class="form-group">

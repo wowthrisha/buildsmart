@@ -48,8 +48,10 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 _origins = [
     "http://localhost:3000",
+    "http://localhost:5001",
     "http://localhost:5173",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:5001",
     os.getenv("FRONTEND_URL", "https://buildiq.vercel.app"),
     os.getenv("FRONTEND_URL_2", ""),
 ]
@@ -654,6 +656,56 @@ async def ocr_sketch(
     text = text.replace("```json", "").replace("```", "").strip()
     extracted = json.loads(text)
     return extracted
+
+
+# ── Route 13: Demo OCR — no auth, for Owner portal ───────────────────────────
+
+@app.post("/api/demo-ocr", tags=["ai"])
+@limiter.limit("30/hour")
+async def demo_ocr(request: Request, file: UploadFile = File(...)):
+    """Extract building dimensions from a sketch image. No auth required."""
+    from backend.ocr_extractor import extract_dimensions_from_image, generate_smart_questions
+
+    contents = await file.read()
+    media_type = file.content_type or "image/jpeg"
+
+    extracted = extract_dimensions_from_image(contents, media_type)
+
+    # Compute plot_area_sqm from width × depth if not already set
+    w = extracted.get("plot_width_ft")
+    d = extracted.get("plot_depth_ft")
+    if w and d and not extracted.get("plot_area_sqm"):
+        extracted["plot_area_sqm"] = round(w * d * 0.0929, 1)
+
+    # Rename proposed_floors → floors key expected by compliance payload
+    if "proposed_floors" in extracted and "floors" not in extracted:
+        extracted["floors"] = extracted["proposed_floors"]
+
+    smart_questions = generate_smart_questions(extracted)
+
+    # Count non-null values (excluding metadata fields)
+    meta_keys = {"confidence", "missing_fields", "notes", "error"}
+    auto_filled_count = sum(
+        1 for k, v in extracted.items()
+        if k not in meta_keys and v is not None
+    )
+
+    return {
+        "extracted": extracted,
+        "smart_questions": smart_questions,
+        "auto_filled_count": auto_filled_count,
+    }
+
+
+# ── Route 14: Demo compliance check — no auth, for Owner portal ──────────────
+
+@app.post("/api/demo-check", tags=["compliance"])
+@limiter.limit("30/hour")
+def demo_check(request: Request, body: ComplianceRequest):
+    """Run compliance check without auth. For Owner portal demo flow."""
+    checker = ComplianceChecker()
+    result = checker.run_full_check(body.model_dump())
+    return result
 
 
 if __name__ == "__main__":

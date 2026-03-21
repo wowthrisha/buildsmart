@@ -337,7 +337,38 @@
       <span class="logo-text">Build<span>Smart</span></span>
     </a>
 
-    <!-- Workspace section -->
+    {% if current_user_role == 'Owner' %}
+    <!-- Owner nav -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">My Plans</div>
+
+      <a href="{{ url_for('owner.owner_home') }}"
+         class="nav-item {% if request.endpoint == 'owner.owner_home' %}active{% endif %}">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        Check my plan
+      </a>
+
+      <a href="/owner/ask"
+         class="nav-item {% if request.endpoint == 'owner.ask' %}active{% endif %}">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        Ask a question
+      </a>
+
+      <a href="/owner/documents"
+         class="nav-item {% if request.endpoint == 'owner.documents' %}active{% endif %}">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        My documents
+      </a>
+    </div>
+
+    {% else %}
+    <!-- Professional nav -->
     <div class="sidebar-section">
       <div class="sidebar-label">Workspace</div>
 
@@ -376,8 +407,6 @@
 
     <!-- Compliance section — sits below Workspace -->
     <div class="sidebar-section">
-      
-
       <a href="{{ url_for('compliance.dashboard', project_id=1) }}"
          class="nav-item {% if request.endpoint == 'compliance.dashboard' %}active{% endif %}">
         <div class="nav-icon">
@@ -386,6 +415,7 @@
         Compliance Tracker
       </a>
     </div>
+    {% endif %}
 
     <div class="sidebar-spacer"></div>
 
