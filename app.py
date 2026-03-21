@@ -48,4 +48,5 @@ app = create_app()
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5001))
-    app.run(debug=True, port=port)
+app.run(debug=os.environ.get("DEBUG", "False") == "True", port=port)
+
