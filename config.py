@@ -7,4 +7,4 @@ class Config:
     UPLOAD_FOLDER = "uploads"
     JWT_SECRET_KEY = "buildsmart-jwt-secret-key"
     JWT_TOKEN_LOCATION = ["cookies"]
-    JWT_COOKIE_CSRF_PROTECT = False  # Simplified for this prototype
+    JWT_COOKIE_CSRF_PROTECT = False

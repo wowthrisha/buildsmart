@@ -3,15 +3,18 @@ from config import Config
 from extensions import db
 from flask_jwt_extended import JWTManager
 import models
+from flask_migrate import Migrate
 
 
 def create_app():
-
+    
     app = Flask(__name__)
     app.config.from_object(Config)
 
+
     db.init_app(app)
-    
+    Migrate(app, db) 
+
     jwt = JWTManager(app)
 
     @jwt.unauthorized_loader
@@ -26,12 +29,15 @@ def create_app():
     from routes.document_routes import document_bp
     from routes.auth_routes import auth_bp
     from routes.timeline_routes import timeline_bp
-    
+    from routes.compliance_routes import compliance_bp
+
     app.register_blueprint(document_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(timeline_bp)
+    app.register_blueprint(compliance_bp)
 
     with app.app_context():
+        from models.compliance_models import ComplianceRequirement
         db.create_all()
 
     return app
