@@ -5,4 +5,6 @@ uploads/
 instance/
 *.db
 venv/
-.DS_Store
+.DS_Storetest.pdf
+test_package.zip
+*.zip

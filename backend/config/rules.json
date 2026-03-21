@@ -1,0 +1,36 @@
+{
+  "setback_rules": {
+    "road_10ft": {"front": 1.5, "rear": 1.0, "side": 1.0},
+    "road_12ft": {"front": 2.0, "rear": 1.0, "side": 1.0},
+    "road_15ft": {"front": 2.0, "rear": 1.5, "side": 1.0},
+    "road_20ft": {"front": 3.0, "rear": 1.5, "side": 1.5},
+    "road_24ft": {"front": 4.5, "rear": 1.5, "side": 1.5},
+    "road_30ft": {"front": 4.5, "rear": 1.5, "side": 1.5},
+    "road_40ft": {"front": 6.0, "rear": 1.5, "side": 1.5}
+  },
+  "far_rules": {
+    "residential_R1": 1.5,
+    "residential_R2": 1.75,
+    "commercial_C1": 2.0
+  },
+  "coverage_rules": {
+    "residential": 0.65,
+    "commercial": 0.60
+  },
+  "height_rules": {
+    "non_highrise_max_m": 14.0,
+    "effective_from": "2024-03-11",
+    "go_number": "G.O.Ms.No.70, HUD, 11-03-2024"
+  },
+  "parking_rules": {
+    "residential_per_unit": 1,
+    "commercial_per_100sqm": 2
+  },
+  "meta": {
+    "source": "TNCDBR 2019",
+    "base_go": "G.O.Ms.No.18, MA&WS, 04-02-2019",
+    "last_amendment": "G.O.Ms.No.154, HUD, Oct-2025",
+    "verified_date": "2026-03-20",
+    "authority": "CCMC Coimbatore"
+  }
+}

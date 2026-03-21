@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: buildiq-api
+    env: python
+    buildCommand: pip install -r requirements.txt && python -m backend.init_rag_db && python -m backend.ingest
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:///backend/db/buildiq.db
+      - key: FRONTEND_URL
+        sync: false
+      - key: FRONTEND_URL_2
+        sync: false
+      - key: WATI_API_TOKEN
+        sync: false
+      - key: WATI_API_URL
+        sync: false
+      - key: DEBUG
+        value: "False"

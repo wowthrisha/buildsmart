@@ -1,0 +1,2516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildIQ — Pre-Submission Compliance Advisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-0: #050505;
+    --bg-1: #080808;
+    --bg-2: #0f0f0f;
+    --bg-3: #151515;
+    --bg-4: #1c1c1c;
+    --border: rgba(255,255,255,0.06);
+    --border-bright: rgba(255,255,255,0.12);
+    --text-primary: #f0f0f0;
+    --text-secondary: #888;
+    --text-tertiary: #444;
+    --accent: #2979FF;
+    --accent-dim: rgba(41,121,255,0.12);
+    --accent-glow: rgba(41,121,255,0.35);
+    --accent-subtle: rgba(41,121,255,0.06);
+    --sidebar-w: 260px;
+    --topbar-h: 60px;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  body[data-page="jurisdiction"]       { --accent:#2979FF; --accent-dim:rgba(41,121,255,.12); --accent-glow:rgba(41,121,255,.35); --accent-subtle:rgba(41,121,255,.06); }
+  body[data-page="compliance"]         { --accent:#FF6B1A; --accent-dim:rgba(255,107,26,.12); --accent-glow:rgba(255,107,26,.35); --accent-subtle:rgba(255,107,26,.06); }
+  body[data-page="documents"]          { --accent:#39FF82; --accent-dim:rgba(57,255,130,.12); --accent-glow:rgba(57,255,130,.35); --accent-subtle:rgba(57,255,130,.06); }
+  body[data-page="rules"]              { --accent:#BF5FFF; --accent-dim:rgba(191,95,255,.12); --accent-glow:rgba(191,95,255,.35); --accent-subtle:rgba(191,95,255,.06); }
+  body[data-page="fees"]               { --accent:#FFD600; --accent-dim:rgba(255,214,0,.12); --accent-glow:rgba(255,214,0,.35); --accent-subtle:rgba(255,214,0,.06); }
+  body[data-page="marketplace"]        { --accent:#39FF82; --accent-dim:rgba(57,255,130,.12); --accent-glow:rgba(57,255,130,.35); --accent-subtle:rgba(57,255,130,.06); }
+  body[data-page="source-viewer"]      { --accent:#00D4FF; --accent-dim:rgba(0,212,255,.12); --accent-glow:rgba(0,212,255,.35); --accent-subtle:rgba(0,212,255,.06); }
+
+  html, body { height: 100%; background: var(--bg-0); color: var(--text-primary); font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+  .shell { display: grid; grid-template-columns: var(--sidebar-w) 1fr; grid-template-rows: var(--topbar-h) 1fr; min-height: 100vh; }
+
+  /* ─── Sidebar ─── */
+  .sidebar { grid-row: 1 / 3; background: var(--bg-1); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 0; position: relative; overflow: hidden; }
+  .sidebar::before { content: ''; position: absolute; top: -80px; left: -80px; width: 260px; height: 260px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); opacity: 0.25; pointer-events: none; transition: background 0.5s; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 20px 24px; border-bottom: 1px solid var(--border); height: var(--topbar-h); }
+  .logo-mark { width: 28px; height: 28px; background: var(--accent); border-radius: 7px; display: grid; place-items: center; box-shadow: 0 0 14px var(--accent-glow); transition: box-shadow 0.4s; flex-shrink: 0; }
+  .logo-mark svg { width: 14px; height: 14px; fill: none; stroke: #000; stroke-width: 2; stroke-linecap: round; }
+  .logo-text { font-size: 15px; font-weight: 500; letter-spacing: -0.3px; color: var(--text-primary); }
+  .logo-text span { color: var(--accent); transition: color 0.4s; }
+  .sidebar-section { padding: 20px 14px 6px; }
+  .sidebar-label { font-size: 9.5px; font-weight: 500; letter-spacing: 1.4px; text-transform: uppercase; color: var(--text-tertiary); padding: 0 10px; margin-bottom: 6px; }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: var(--radius-sm); color: var(--text-secondary); text-decoration: none; font-size: 13.5px; font-weight: 400; cursor: pointer; transition: all 0.2s; position: relative; margin-bottom: 2px; }
+  .nav-item:hover { background: var(--bg-3); color: var(--text-primary); }
+  .nav-item.active { background: var(--accent-subtle); color: var(--text-primary); }
+  .nav-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 2.5px; height: 60%; background: var(--accent); border-radius: 0 3px 3px 0; box-shadow: 0 0 8px var(--accent-glow); transition: background 0.4s, box-shadow 0.4s; }
+  .nav-icon { width: 32px; height: 32px; border-radius: 7px; background: var(--bg-3); display: grid; place-items: center; flex-shrink: 0; transition: background 0.2s; }
+  .nav-item.active .nav-icon { background: var(--accent-dim); }
+  .nav-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .nav-badge { margin-left: auto; font-size: 10px; font-weight: 500; background: var(--accent-dim); color: var(--accent); border-radius: 20px; padding: 1px 7px; transition: background 0.4s, color 0.4s; }
+  .sidebar-spacer { flex: 1; }
+  .sidebar-user { padding: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #000); display: grid; place-items: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; box-shadow: 0 0 10px var(--accent-glow); transition: box-shadow 0.4s; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 11px; color: var(--text-secondary); }
+
+  /* ─── Topbar ─── */
+  .topbar { background: var(--bg-1); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; padding: 0 28px; }
+  .topbar-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+  .topbar-breadcrumb .crumb-active { color: var(--text-primary); font-weight: 500; }
+  .crumb-sep { color: var(--text-tertiary); font-size: 11px; }
+  .topbar-spacer { flex: 1; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .tb-btn { width: 34px; height: 34px; border-radius: var(--radius-sm); background: var(--bg-3); border: 1px solid var(--border); display: grid; place-items: center; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; position: relative; }
+  .tb-btn:hover { background: var(--bg-4); color: var(--text-primary); border-color: var(--border-bright); }
+  .tb-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .notif-dot { position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; border: 1.5px solid var(--bg-1); box-shadow: 0 0 6px var(--accent-glow); transition: background 0.4s, box-shadow 0.4s; }
+  .tb-primary { display: flex; align-items: center; gap: 7px; padding: 0 14px; height: 34px; border-radius: var(--radius-sm); background: var(--accent); color: #000; font-size: 13px; font-weight: 600; border: none; cursor: pointer; box-shadow: 0 0 16px var(--accent-glow); transition: all 0.3s; letter-spacing: -0.2px; }
+  .tb-primary:hover { filter: brightness(1.1); box-shadow: 0 0 24px var(--accent-glow); }
+  .tb-primary svg { width: 13px; height: 13px; stroke: #000; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ─── Main ─── */
+  .main { background: var(--bg-0); overflow-y: auto; padding: 32px 36px; display: flex; flex-direction: column; gap: 28px; }
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+  .page-eyebrow { font-size: 10.5px; font-weight: 500; letter-spacing: 1.8px; text-transform: uppercase; color: var(--accent); transition: color 0.4s; margin-bottom: 6px; }
+  .page-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 38px; font-weight: 300; letter-spacing: -1.5px; line-height: 1.0; color: var(--text-primary); }
+  .page-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 8px; max-width: 420px; line-height: 1.6; }
+  .page-header-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .btn-ghost { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: var(--radius-sm); background: transparent; border: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; font-weight: 400; cursor: pointer; transition: all 0.2s; }
+  .btn-ghost:hover { background: var(--bg-3); color: var(--text-primary); border-color: var(--border-bright); }
+  .btn-ghost svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ─── Stats grid ─── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .stat-card { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 22px 20px; position: relative; overflow: hidden; transition: border-color 0.2s, transform 0.2s; cursor: default; }
+  .stat-card:hover { border-color: var(--border-bright); transform: translateY(-1px); }
+  .stat-card.highlight { border-color: var(--accent-dim); background: var(--accent-subtle); }
+  .stat-card.highlight::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); transition: background 0.4s, box-shadow 0.4s; }
+  .stat-label { font-size: 11px; color: var(--text-secondary); letter-spacing: 0.3px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .stat-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); transition: background 0.4s, box-shadow 0.4s; }
+  .stat-value { font-size: 30px; font-weight: 300; letter-spacing: -1.5px; line-height: 1; color: var(--text-primary); font-family: 'DM Mono', monospace; }
+  .stat-change { font-size: 11px; margin-top: 8px; display: flex; align-items: center; gap: 4px; }
+  .stat-change.up { color: #39FF82; }
+  .stat-change.down { color: #FF6B6B; }
+  .stat-change.neutral { color: var(--text-secondary); }
+  .stat-change svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ─── Content grid ─── */
+  .content-grid { display: grid; grid-template-columns: 1fr 340px; gap: 14px; align-items: start; }
+
+  /* ─── Panel ─── */
+  .panel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 16px; border-bottom: 1px solid var(--border); }
+  .panel-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.2px; }
+  .panel-title-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .panel-action { font-size: 12px; color: var(--accent); cursor: pointer; transition: opacity 0.2s; text-decoration: none; }
+  .panel-action:hover { opacity: 0.7; }
+
+  /* ─── Form elements ─── */
+  .form-body { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field-label { font-size: 11px; color: var(--text-secondary); letter-spacing: 0.3px; font-weight: 500; text-transform: uppercase; }
+  .field-input, .field-select { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text-primary); font-size: 13px; font-family: 'DM Sans', sans-serif; transition: border-color 0.2s, box-shadow 0.2s; width: 100%; outline: none; }
+  .field-input:focus, .field-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .field-select option { background: var(--bg-3); }
+  .field-hint { font-size: 10.5px; color: var(--text-tertiary); }
+  .form-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--border); }
+  .btn-primary { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: var(--radius-sm); background: var(--accent); color: #000; font-size: 13px; font-weight: 600; border: none; cursor: pointer; box-shadow: 0 0 16px var(--accent-glow); transition: all 0.3s; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-primary svg { width: 13px; height: 13px; stroke: #000; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ─── Result cards ─── */
+  .results-area { padding: 22px; display: flex; flex-direction: column; gap: 10px; }
+  .result-card { border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.2s; }
+  .result-card.pass  { border-color: rgba(57,255,130,0.2); background: rgba(57,255,130,0.04); }
+  .result-card.marginal { border-color: rgba(255,214,0,0.2); background: rgba(255,214,0,0.04); }
+  .result-card.fail  { border-color: rgba(255,107,107,0.2); background: rgba(255,107,107,0.04); }
+  .result-top { display: flex; align-items: center; justify-content: space-between; }
+  .result-name { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .result-pill { font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; }
+  .pill-pass     { background: rgba(57,255,130,0.15); color: #39FF82; }
+  .pill-marginal { background: rgba(255,214,0,0.15); color: #FFD600; }
+  .pill-fail     { background: rgba(255,107,107,0.15); color: #FF6B6B; }
+  .result-values { display: flex; gap: 20px; }
+  .result-val { font-size: 11.5px; color: var(--text-secondary); }
+  .result-val strong { color: var(--text-primary); font-family: 'DM Mono', monospace; font-size: 12px; }
+  .result-fix { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px 12px; background: var(--bg-2); border-radius: 6px; border-left: 2px solid var(--accent); }
+  .result-source { font-size: 10.5px; color: var(--text-tertiary); font-family: 'DM Mono', monospace; }
+
+  /* ─── Overall status banner ─── */
+  .status-banner { border-radius: var(--radius-sm); padding: 14px 18px; display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+  .status-banner.pass     { background: rgba(57,255,130,0.08); border: 1px solid rgba(57,255,130,0.2); }
+  .status-banner.marginal { background: rgba(255,214,0,0.08); border: 1px solid rgba(255,214,0,0.2); }
+  .status-banner.fail     { background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.2); }
+  .status-icon { font-size: 20px; }
+  .status-text { flex: 1; }
+  .status-label { font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; }
+  .status-label.pass     { color: #39FF82; }
+  .status-label.marginal { color: #FFD600; }
+  .status-label.fail     { color: #FF6B6B; }
+  .status-summary { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ─── Pipeline steps ─── */
+  .pipeline { padding: 22px; display: flex; flex-direction: column; gap: 0; }
+  .pipeline-step { display: flex; gap: 16px; position: relative; }
+  .pipeline-step:not(:last-child)::before { content: ''; position: absolute; left: 15px; top: 32px; bottom: -12px; width: 1px; background: var(--border); }
+  .step-node { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; margin-top: 2px; position: relative; z-index: 1; }
+  .step-node.done   { background: var(--accent-dim); border: 1px solid var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+  .step-node.active { background: var(--accent); box-shadow: 0 0 16px var(--accent-glow); animation: pulse-node 2.5s ease infinite; }
+  .step-node.pending{ background: var(--bg-3); border: 1px solid var(--border-bright); }
+  @keyframes pulse-node { 0%,100%{box-shadow:0 0 16px var(--accent-glow);} 50%{box-shadow:0 0 28px var(--accent-glow);} }
+  .step-node svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .step-node.done svg   { color: var(--accent); }
+  .step-node.active svg { color: #000; }
+  .step-node.pending svg{ color: var(--text-tertiary); }
+  .step-body { flex: 1; padding-bottom: 20px; }
+  .step-title { font-size: 13px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+  .step-status-pill { font-size: 10px; font-weight: 500; letter-spacing: 0.4px; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; }
+  .pill-done    { background: var(--accent-dim); color: var(--accent); }
+  .pill-active  { background: var(--accent); color: #000; }
+  .pill-pending { background: var(--bg-3); color: var(--text-tertiary); }
+  .step-meta { font-size: 11.5px; color: var(--text-secondary); margin-top: 4px; }
+  .step-assignees { display: flex; align-items: center; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+  .assignee-chip { height: 22px; padding: 0 9px; background: var(--bg-3); border-radius: 20px; font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+  .assignee-chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); transition: background 0.4s; }
+
+  /* ─── Doc list ─── */
+  .doc-list { padding: 6px 0; }
+  .doc-item { display: flex; align-items: center; gap: 14px; padding: 12px 22px; border-bottom: 1px solid var(--border); transition: background 0.2s; cursor: pointer; }
+  .doc-item:last-child { border-bottom: none; }
+  .doc-item:hover { background: var(--bg-2); }
+  .doc-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--accent-dim); display: grid; place-items: center; flex-shrink: 0; }
+  .doc-icon svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.4s; }
+  .doc-info { flex: 1; min-width: 0; }
+  .doc-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .doc-meta { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+  .doc-status { font-size: 10.5px; font-weight: 500; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.3px; }
+  .ds-approved { background: rgba(57,255,130,0.1); color: #39FF82; }
+  .ds-review   { background: var(--accent-dim); color: var(--accent); }
+  .ds-rejected { background: rgba(255,107,107,0.1); color: #FF6B6B; }
+  .ds-missing  { background: rgba(255,214,0,0.1); color: #FFD600; }
+  .ds-draft    { background: var(--bg-3); color: var(--text-secondary); }
+
+  /* ─── Activity feed ─── */
+  .feed { padding: 8px 0; }
+  .feed-item { padding: 12px 22px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: #000; margin-top: 1px; }
+  .feed-body { flex: 1; }
+  .feed-name  { font-size: 12.5px; font-weight: 500; }
+  .feed-text  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; line-height: 1.5; }
+  .feed-time  { font-size: 10.5px; color: var(--text-tertiary); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  /* ─── Project list ─── */
+  .project-list { padding: 6px 0; }
+  .project-item { padding: 14px 22px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
+  .project-item:last-child { border-bottom: none; }
+  .project-item:hover { background: var(--bg-2); }
+  .project-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .project-name { font-size: 13px; font-weight: 500; }
+  .project-loc  { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+  .project-phase { font-size: 10.5px; font-weight: 500; padding: 3px 8px; border-radius: 20px; background: var(--accent-dim); color: var(--accent); white-space: nowrap; transition: background 0.4s, color 0.4s; }
+  .project-progress-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+  .progress-label { font-size: 11px; color: var(--text-secondary); }
+  .progress-pct { font-size: 12px; font-weight: 500; color: var(--accent); font-family: 'DM Mono', monospace; transition: color 0.4s; }
+  .mini-progress { height: 3px; background: var(--bg-3); border-radius: 20px; overflow: hidden; margin-top: 6px; }
+  .mini-progress-fill { height: 100%; background: var(--accent); border-radius: 20px; box-shadow: 0 0 6px var(--accent-glow); transition: background 0.4s, box-shadow 0.4s; }
+
+  /* ─── Fee table ─── */
+  .fee-table { padding: 22px; display: flex; flex-direction: column; gap: 0; }
+  .fee-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .fee-row:last-child { border-bottom: none; }
+  .fee-row.total { padding-top: 14px; margin-top: 4px; }
+  .fee-label { font-size: 13px; color: var(--text-secondary); }
+  .fee-label.total-label { font-size: 13px; color: var(--text-primary); font-weight: 600; }
+  .fee-amount { font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text-primary); }
+  .fee-amount.total-amount { font-size: 22px; font-weight: 300; letter-spacing: -1px; color: var(--accent); font-family: 'DM Mono', monospace; }
+  .fee-benchmark { margin: 16px 22px; padding: 14px 16px; background: var(--accent-subtle); border: 1px solid var(--accent-dim); border-radius: var(--radius-sm); }
+  .fee-benchmark-title { font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 4px; }
+  .fee-benchmark-value { font-size: 18px; font-family: 'DM Mono', monospace; font-weight: 300; color: var(--text-primary); }
+  .fee-benchmark-note { font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
+
+  /* ─── Rule explainer ─── */
+  .rule-qa { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+  .rule-answer-box { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; }
+  .rule-answer-text { font-size: 13px; color: var(--text-primary); line-height: 1.7; }
+  .rule-citation { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .rule-cite-chip { font-size: 10.5px; font-family: 'DM Mono', monospace; color: var(--text-tertiary); background: var(--bg-3); border-radius: 4px; padding: 3px 8px; }
+  .confidence-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; }
+  .conf-high   { background: rgba(57,255,130,0.15); color: #39FF82; }
+  .conf-medium { background: rgba(255,214,0,0.15); color: #FFD600; }
+  .conf-low    { background: rgba(255,107,107,0.15); color: #FF6B6B; }
+
+  /* ─── Disclaimer strip ─── */
+  .disclaimer-strip { margin: 16px 22px 20px; padding: 10px 14px; background: rgba(255,214,0,0.06); border: 1px solid rgba(255,214,0,0.15); border-radius: var(--radius-sm); font-size: 11px; color: var(--text-secondary); line-height: 1.5; }
+  .disclaimer-strip strong { color: #FFD600; }
+
+  /* ─── Loading spinner ─── */
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-state { display: flex; align-items: center; gap: 10px; padding: 22px; color: var(--text-secondary); font-size: 13px; }
+
+  /* ─── Empty state ─── */
+  .empty-state { padding: 40px 22px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+  .empty-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--bg-3); display: grid; place-items: center; }
+  .empty-icon svg { width: 20px; height: 20px; stroke: var(--text-tertiary); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .empty-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  .empty-sub { font-size: 12px; color: var(--text-tertiary); max-width: 220px; line-height: 1.5; }
+
+  /* ─── Page sections (shown/hidden) ─── */
+  .page-section { display: none; flex-direction: column; gap: 28px; }
+  .page-section.visible { display: flex; }
+
+  /* ─── Scrollbar ─── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
+
+  /* ─── Transitions ─── */
+  .sidebar::before,.logo-mark,.logo-text span,.nav-item.active,.nav-item.active::before,.nav-badge,.notif-dot,.tb-primary,.stat-dot,.stat-card.highlight,.stat-card.highlight::after,.step-node.done,.step-node.active,.step-status-pill,.pill-done,.pill-active,.assignee-chip .dot,.doc-icon,.doc-icon svg,.mini-progress-fill,.project-phase,.progress-pct,.panel-action,.page-eyebrow { transition: all 0.45s ease; }
+
+  /* ─── Animations ─── */
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+  .stats-grid  { animation: fadeUp 0.5s ease both; animation-delay: 0.05s; }
+  .content-grid{ animation: fadeUp 0.5s ease both; animation-delay: 0.12s; }
+</style>
+</head>
+<body data-page="jurisdiction">
+
+<div class="shell">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 14 14"><path d="M2 11 L7 3 L12 11 M4.5 8 H9.5" stroke="#000" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      </div>
+      <span class="logo-text">Build<span>IQ</span></span>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Pre-Check Tools</div>
+
+      <a class="nav-item active" onclick="setPage('jurisdiction','Jurisdiction Check','Pre-Submission','Find out which authority governs your plot — CCMC, DTCP, or LPA — before spending on drawings or agencies.',this)">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        </div>
+        Jurisdiction Check
+      </a>
+
+      <a class="nav-item" onclick="setPage('compliance','Compliance Estimator','Quality Control','Check your setbacks, FAR, coverage and height against TNCDBR 2019 rules before submitting to any agency.',this)">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><polyline points="22 4 12 14.01 9 11.01"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </div>
+        Compliance Estimator
+        <span class="nav-badge">New</span>
+      </a>
+
+      <a class="nav-item" onclick="setPage('documents','Document Advisor','Document Hub','Know exactly which documents you need and what makes each one fail at agency level — before your first visit.',this)">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        Document Advisor
+      </a>
+
+      <a class="nav-item" onclick="setPage('rules','Rule Explainer','Knowledge Base','Ask any question about TNCDBR 2019 or CCMC bye-laws in plain Tamil or English — with source citations.',this)">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        Rule Explainer
+      </a>
+
+      <a class="nav-item" onclick="setPage('fees','Fee Calculator','Cost Intelligence','Estimate government fees and compare agency benchmarks before committing to any service.',this)">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        Fee Calculator
+      </a>
+      <a class="nav-item" onclick="setPage('marketplace','Architect Marketplace','₹999 Submission','Connect with a verified architect who receives your BuildIQ package and submits to eDCR in 20 minutes.',this)">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        Architect Marketplace
+        <span class="nav-badge">₹999</span>
+      </a>
+      <a class="nav-item" onclick="setPage('source-viewer','Source Viewer','Document Viewer','View original TNCDBR regulation pages with live search and text highlights.',this)">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        Source Viewer
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Info</div>
+      <a class="nav-item">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16v2H4zM4 9h16v2H4zM4 14h10v2H4z"/><circle cx="18" cy="18" r="3"/><path d="M20.5 20.5l2 2" stroke-width="2"/></svg>
+        </div>
+        What Changed
+        <span class="nav-badge">2</span>
+      </a>
+      <a class="nav-item">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        About BuildIQ
+      </a>
+    </div>
+
+    <div class="sidebar-spacer"></div>
+
+    <div class="disclaimer-strip" style="margin:12px 14px;font-size:10.5px;">
+      <strong>⚠ Advisory only.</strong> Not a substitute for licensed professional advice.
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">TR</div>
+      <div class="user-info">
+        <div class="user-name">Thrisha R.</div>
+        <div class="user-role">Building Owner</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════ TOPBAR ═══════════ -->
+  <header class="topbar">
+    <div class="topbar-breadcrumb">
+      <span>BuildIQ</span>
+      <span class="crumb-sep">›</span>
+      <span id="breadcrumb-active" class="crumb-active">Jurisdiction Check</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <button class="tb-btn" id="topbar-lang-btn" title="Tamil / English toggle" onclick="toggleLanguage()" style="gap:6px;font-size:12px;font-weight:600;letter-spacing:0.5px;">
+        <svg viewBox="0 0 24 24"><path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
+        <span id="topbar-lang-label">EN</span>
+      </button>
+      <button class="tb-btn" title="Notifications">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <button class="tb-primary" onclick="handleCTA()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span id="cta-label">New Check</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <main class="main">
+
+    <!-- ══ PAGE: JURISDICTION ══ -->
+    <div class="page-section visible" id="page-jurisdiction">
+
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">Pre-Submission</div>
+          <h1 class="page-title" data-i18n="jurisdictionTitle">Jurisdiction Check</h1>
+          <p class="page-subtitle" data-i18n="jurisdictionSub">Find out which authority governs your plot — CCMC, DTCP, or LPA — before spending on drawings or agencies.</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-ghost"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Lookup Survey No.</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card highlight">
+          <div class="stat-label">Coimbatore Agencies<span class="stat-dot"></span></div>
+          <div class="stat-value">30<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">+</span></div>
+          <div class="stat-change neutral">Listed on Sulekha & IndiaMART</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">CCMC Approval Time</div>
+          <div class="stat-value">3<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">d</span></div>
+          <div class="stat-change up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>AutoDCR processed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Agency Fee Range</div>
+          <div class="stat-value">₹15<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">k+</span></div>
+          <div class="stat-change neutral">Residential submission</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Rules Last Amended</div>
+          <div class="stat-value" style="font-size:18px;letter-spacing:-0.5px">Mar 24</div>
+          <div class="stat-change neutral">G.O.Ms.No.70, HUD</div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Authority Identifier</div>
+                <div class="panel-title-sub">Answer 4 questions — takes 60 seconds</div>
+              </div>
+            </div>
+            <div class="form-body">
+              <div class="form-row">
+                <div class="field">
+                  <label class="field-label">Plot Location</label>
+                  <select class="field-select" id="j-location">
+                    <option value="city">Within Coimbatore city limits</option>
+                    <option value="outskirts">Coimbatore outskirts / periphery</option>
+                    <option value="village">Village / Panchayat area</option>
+                  </select>
+                  <span class="field-hint">If unsure, select outskirts</span>
+                </div>
+                <div class="field">
+                  <label class="field-label">Total Plot Area (acres)</label>
+                  <input class="field-input" type="number" id="j-acres" step="0.01" min="0.01" value="0.10" placeholder="e.g. 0.10">
+                  <span class="field-hint">1 ground = 0.0551 acres</span>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label class="field-label">Number of Floors Planned</label>
+                  <select class="field-select" id="j-floors">
+                    <option value="1">Ground floor only (G)</option>
+                    <option value="2" selected>G + 1</option>
+                    <option value="3">G + 2</option>
+                    <option value="4">G + 3</option>
+                    <option value="5">G + 4</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field-label">Building Use</label>
+                  <select class="field-select" id="j-use">
+                    <option value="residential">Residential</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="mixed">Mixed Use</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-primary" onclick="runJurisdiction()">
+                <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                Identify Authority
+              </button>
+            </div>
+          </div>
+
+          <div class="panel" id="j-result-panel" style="display:none">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Your Authority</div>
+                <div class="panel-title-sub" id="j-result-sub">Based on inputs provided</div>
+              </div>
+              <span class="panel-action" onclick="setPage('compliance','Compliance Estimator','Quality Control','Check your setbacks, FAR, coverage and height against TNCDBR 2019 rules before submitting.',document.querySelector(\'[onclick*=compliance]\'))">Check Compliance →</span>
+            </div>
+            <div class="pipeline">
+              <div class="pipeline-step">
+                <div class="step-node done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="step-body">
+                  <div class="step-title">Authority Identified <span class="step-status-pill pill-done" id="j-authority-pill">CCMC</span></div>
+                  <div class="step-meta" id="j-authority-note">Coimbatore City Municipal Corporation — AutoDCR processed</div>
+                  <div class="step-assignees">
+                    <div class="assignee-chip"><div class="dot"></div><span id="j-helpline">0422-2390261</span></div>
+                    <div class="assignee-chip"><div class="dot"></div><span id="j-timeline">Approval: 3–7 days</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="pipeline-step">
+                <div class="step-node active"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></div>
+                <div class="step-body">
+                  <div class="step-title">Next Step <span class="step-status-pill pill-active">Action Required</span></div>
+                  <div class="step-meta" id="j-next-step">Collect documents and run compliance check below</div>
+                </div>
+              </div>
+              <div class="pipeline-step">
+                <div class="step-node pending"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg></div>
+                <div class="step-body">
+                  <div class="step-title">Agency Submission <span class="step-status-pill pill-pending">Pending</span></div>
+                  <div class="step-meta">After BuildIQ pre-check passes — engage an approved agency</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Quick Reference</div></div>
+            </div>
+            <div class="doc-list">
+              <div class="doc-item">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
+                <div class="doc-info"><div class="doc-name">CCMC — City Limits</div><div class="doc-meta">Plot &lt; 2.47 acres · 3–7 day approval</div></div>
+                <span class="doc-status ds-approved">Fast</span>
+              </div>
+              <div class="doc-item">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>
+                <div class="doc-info"><div class="doc-name">LPA — Local Planning Area</div><div class="doc-meta">Outskirts / peri-urban plots</div></div>
+                <span class="doc-status ds-review">Medium</span>
+              </div>
+              <div class="doc-item">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+                <div class="doc-info"><div class="doc-name">DTCP — Large Layouts</div><div class="doc-meta">Layout &gt; 2.47 acres · 4–6 months</div></div>
+                <span class="doc-status ds-rejected">Slow</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Recent Checks</div></div>
+              <a class="panel-action">Clear →</a>
+            </div>
+            <div class="feed">
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:var(--accent)">RS</div>
+                <div class="feed-body">
+                  <div class="feed-name">Saravanampatti Plot</div>
+                  <div class="feed-text">CCMC — Residential G+1 · Compliance PASS</div>
+                  <div class="feed-time">Today · 14:22</div>
+                </div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#FF6B1A">KP</div>
+                <div class="feed-body">
+                  <div class="feed-name">Peelamedu Commercial</div>
+                  <div class="feed-text">CCMC — Commercial G+3 · Setback FAIL</div>
+                  <div class="feed-time">Today · 11:05</div>
+                </div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#39FF82">VN</div>
+                <div class="feed-body">
+                  <div class="feed-name">Vadavalli Layout</div>
+                  <div class="feed-text">LPA — Residential · Documents MARGINAL</div>
+                  <div class="feed-time">Yesterday · 16:40</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: COMPLIANCE ══ -->
+    <div class="page-section" id="page-compliance">
+
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">Quality Control</div>
+          <h1 class="page-title" data-i18n="complianceTitle">Compliance Estimator</h1>
+          <p class="page-subtitle" data-i18n="complianceSub">Check your setbacks, FAR, coverage and height against TNCDBR 2019 rules before submitting to any agency.</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-ghost" onclick="resetCompliance()"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Reset</button>
+        </div>
+      </div>
+
+      <div class="stats-grid" id="comp-stats">
+        <div class="stat-card highlight">
+          <div class="stat-label">Setback<span class="stat-dot"></span></div>
+          <div class="stat-value" id="cs-setback">—</div>
+          <div class="stat-change neutral" id="cs-setback-sub">Not checked yet</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">FAR / FSI</div>
+          <div class="stat-value" id="cs-far">—</div>
+          <div class="stat-change neutral" id="cs-far-sub">Not checked yet</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Coverage</div>
+          <div class="stat-value" id="cs-cov">—</div>
+          <div class="stat-change neutral" id="cs-cov-sub">Not checked yet</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Height</div>
+          <div class="stat-value" id="cs-ht">—</div>
+          <div class="stat-change neutral" id="cs-ht-sub">Not checked yet</div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Plot & Building Parameters</div><div class="panel-title-sub">Use constrained inputs — no free-text for dimensions</div></div>
+            </div>
+
+            <!-- OCR sketch upload -->
+            <div style="margin:0 16px 16px;border:1.5px dashed var(--border-bright);border-radius:8px;overflow:hidden">
+              <div style="padding:20px;text-align:center" id="ocr-drop-zone"
+                ondragover="event.preventDefault()"
+                ondrop="handleSketchDrop(event)">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+                  stroke="var(--text-tertiary)" stroke-width="1.5"
+                  style="display:block;margin:0 auto 8px">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <path d="M21 15l-5-5L5 21"/>
+                </svg>
+                <div style="font-size:14px;color:var(--text-secondary);margin-bottom:4px">
+                  Drop your sketch or photo here
+                </div>
+                <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:12px">
+                  Claude Vision will read the dimensions and fill the form
+                </div>
+                <label style="cursor:pointer">
+                  <input type="file" id="sketch-upload" accept="image/*"
+                    style="display:none" onchange="handleSketchUpload(this)">
+                  <span class="btn-ghost" style="display:inline-flex;gap:6px;align-items:center;padding:8px 16px;cursor:pointer">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Choose image
+                  </span>
+                </label>
+              </div>
+              <div id="ocr-preview" style="display:none;padding:16px">
+                <div style="display:grid;grid-template-columns:120px 1fr;gap:16px;align-items:start">
+                  <img id="ocr-thumb" style="width:120px;height:90px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border)" alt="">
+                  <div>
+                    <div id="ocr-status" style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Analyzing sketch...</div>
+                    <div id="ocr-notes" style="font-size:12px;color:var(--text-tertiary);line-height:1.5"></div>
+                    <div id="ocr-confidence" style="margin-top:8px"></div>
+                    <button onclick="resetOcr()" style="margin-top:10px;font-size:11px;color:var(--text-tertiary);background:none;border:none;cursor:pointer;text-decoration:underline">Try another image</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-body">
+              <div class="form-row">
+                <div class="field">
+                  <label class="field-label">Road Width</label>
+                  <select class="field-select" id="c-road">
+                    <option value="10">10 ft</option>
+                    <option value="12">12 ft</option>
+                    <option value="15">15 ft</option>
+                    <option value="20" selected>20 ft</option>
+                    <option value="24">24 ft</option>
+                    <option value="30">30 ft</option>
+                    <option value="40">40 ft</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field-label">Zone Type</label>
+                  <select class="field-select" id="c-zone">
+                    <option value="residential_R1">Residential R1</option>
+                    <option value="residential_R2">Residential R2</option>
+                    <option value="commercial_C1">Commercial C1</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row-3">
+                <div class="field">
+                  <label class="field-label">Front Setback (m)</label>
+                  <input class="field-input" type="number" id="c-front" step="0.1" min="0" value="1.2">
+                </div>
+                <div class="field">
+                  <label class="field-label">Rear Setback (m)</label>
+                  <input class="field-input" type="number" id="c-rear" step="0.1" min="0" value="1.5">
+                </div>
+                <div class="field">
+                  <label class="field-label">Side Setback (m)</label>
+                  <input class="field-input" type="number" id="c-side" step="0.1" min="0" value="1.5">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label class="field-label">Plot Area (sq.m)</label>
+                  <input class="field-input" type="number" id="c-plot" step="1" min="1" value="120">
+                </div>
+                <div class="field">
+                  <label class="field-label">Proposed Built-up Area (sq.m)</label>
+                  <input class="field-input" type="number" id="c-builtup" step="1" min="1" value="210">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label class="field-label">Ground Floor Footprint (sq.m)</label>
+                  <input class="field-input" type="number" id="c-footprint" step="1" min="1" value="80">
+                </div>
+                <div class="field">
+                  <label class="field-label">Proposed Height (m)</label>
+                  <input class="field-input" type="number" id="c-height" step="0.1" min="1" value="8.5">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label class="field-label">Number of Floors</label>
+                  <select class="field-select" id="c-floors">
+                    <option value="1">1 — Ground only</option>
+                    <option value="2" selected>2 — G + 1</option>
+                    <option value="3">3 — G + 2</option>
+                    <option value="4">4 — G + 3</option>
+                    <option value="5">5 — G + 4</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field-label">Building Type</label>
+                  <select class="field-select" id="c-btype">
+                    <option value="residential">Residential</option>
+                    <option value="commercial">Commercial</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-ghost" onclick="resetCompliance()">Clear</button>
+              <button id="pkg-btn" class="btn-ghost" onclick="downloadPackage()" style="display:none">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download Submission Package
+              </button>
+              <button class="btn-primary" id="comp-btn" onclick="runCompliance()">
+                <svg viewBox="0 0 24 24"><polyline points="22 4 12 14.01 9 11.01"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                Run Compliance Check
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Results</div><div class="panel-title-sub" id="comp-result-sub">Fill form and run check</div></div>
+            </div>
+            <div id="comp-results-container">
+              <div class="empty-state">
+                <div class="empty-icon"><svg viewBox="0 0 24 24"><polyline points="22 4 12 14.01 9 11.01"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+                <div class="empty-title">No results yet</div>
+                <div class="empty-sub">Fill parameters and click Run Compliance Check</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PDF Viewer -->
+          <div id="pdf-viewer" style="display:none" class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title" id="pdf-viewer-title">Source Document</div>
+                <div class="panel-title-sub" id="pdf-viewer-subtitle"></div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="btn-ghost" id="pdf-prev" onclick="pdfNav(-1)">← Prev</button>
+                <span id="pdf-page-indicator" style="padding:6px 12px;color:var(--text-secondary);font-size:12px;font-family:'DM Mono',monospace"></span>
+                <button class="btn-ghost" id="pdf-next" onclick="pdfNav(1)">Next →</button>
+              </div>
+            </div>
+            <div style="position:relative;margin:16px">
+              <img id="pdf-page-img" style="width:100%;border-radius:8px;border:1px solid var(--border)" alt="" />
+            </div>
+            <div id="pdf-excerpt" style="font-size:12px;font-family:'DM Mono',monospace;background:var(--accent-subtle);margin:0 16px 16px;border-radius:6px;padding:12px;color:var(--text-secondary);white-space:pre-wrap;line-height:1.6"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Radar chart panel -->
+      <div class="panel" id="radar-panel" style="display:none;margin-top:14px">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Compliance Profile</div>
+            <div class="panel-title-sub">Shape shows where you stand across all 5 rules</div>
+          </div>
+          <div id="overall-score-badge" style="padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:16px">
+          <div style="position:relative;height:280px">
+            <canvas id="radarChart"></canvas>
+          </div>
+          <div id="rule-summary-list" style="display:flex;flex-direction:column;gap:10px;justify-content:center"></div>
+        </div>
+      </div>
+
+      <!-- Approval timeline panel -->
+      <div class="panel" id="timeline-panel" style="display:none;margin-top:14px">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Approval Journey</div>
+            <div class="panel-title-sub">6 stages from pre-check to CCMC approval</div>
+          </div>
+          <div style="color:var(--text-secondary);font-size:12px" id="total-timeline-days"></div>
+        </div>
+        <div id="timeline-stages" style="padding:16px 20px;display:flex;flex-direction:column;gap:0"></div>
+      </div>
+
+    </div>
+
+    <!-- ══ PAGE: DOCUMENTS ══ -->
+    <div class="page-section" id="page-documents">
+
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">Document Hub</div>
+          <h1 class="page-title">Document Advisor</h1>
+          <p class="page-subtitle">Know exactly which documents you need and what makes each one fail at agency level — before your first visit.</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-ghost"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Checklist</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card highlight">
+          <div class="stat-label">Documents Required<span class="stat-dot"></span></div>
+          <div class="stat-value">12</div>
+          <div class="stat-change neutral">For CCMC residential</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Commonly Missing</div>
+          <div class="stat-value">3</div>
+          <div class="stat-change down"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>EC, Site Plan, FMB</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Agency Visit Saved</div>
+          <div class="stat-value">1</div>
+          <div class="stat-change up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>₹2,000–5,000 saved</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Last Verified</div>
+          <div class="stat-value" style="font-size:18px;letter-spacing:-0.5px">Mar 26</div>
+          <div class="stat-change neutral">CCMC checklist 2026</div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">CCMC Document Checklist</div><div class="panel-title-sub">Residential · Category I (up to 150 sq.m)</div></div>
+              <a class="panel-action">Mark all →</a>
+            </div>
+            <div class="doc-list">
+              <div class="doc-item" onclick="toggleDoc(this)">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div class="doc-info"><div class="doc-name">Sale Deed / Title Deed</div><div class="doc-meta">Must be registered · Owner name must match application</div></div>
+                <span class="doc-status ds-approved">✓ Have it</span>
+              </div>
+              <div class="doc-item" onclick="toggleDoc(this)">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div class="doc-info"><div class="doc-name">Patta / Chitta</div><div class="doc-meta">Must reflect current owner · Verify name matches Sale Deed</div></div>
+                <span class="doc-status ds-approved">✓ Have it</span>
+              </div>
+              <div class="doc-item" onclick="toggleDoc(this)">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div class="doc-info"><div class="doc-name">EC — Encumbrance Certificate</div><div class="doc-meta">⚠ Must be within last 30 days · Common rejection cause</div></div>
+                <span class="doc-status ds-missing">⚠ Check Date</span>
+              </div>
+              <div class="doc-item" onclick="toggleDoc(this)">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div class="doc-info"><div class="doc-name">FMB Sketch (Field Measurement Book)</div><div class="doc-meta">Obtained from Taluk office · Must match plot boundaries</div></div>
+                <span class="doc-status ds-approved">✓ Have it</span>
+              </div>
+              <div class="doc-item" onclick="toggleDoc(this)">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div class="doc-info"><div class="doc-name">Site Plan (Architect certified)</div><div class="doc-meta">⚠ Must be eDCR-compliant DXF format · Common rejection cause</div></div>
+                <span class="doc-status ds-rejected">✗ Missing</span>
+              </div>
+              <div class="doc-item" onclick="toggleDoc(this)">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div class="doc-info"><div class="doc-name">Architect Certificate</div><div class="doc-meta">Must be a TNCA registered architect · Verify licence number</div></div>
+                <span class="doc-status ds-rejected">✗ Missing</span>
+              </div>
+              <div class="doc-item" onclick="toggleDoc(this)">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div class="doc-info"><div class="doc-name">Property Tax Receipt</div><div class="doc-meta">Latest paid receipt · Verify property ID matches survey no.</div></div>
+                <span class="doc-status ds-approved">✓ Have it</span>
+              </div>
+              <div class="doc-item" onclick="toggleDoc(this)">
+                <div class="doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div class="doc-info"><div class="doc-name">Aadhaar / ID Proof of Owner</div><div class="doc-meta">Self-attested copy · Name must match all other documents</div></div>
+                <span class="doc-status ds-approved">✓ Have it</span>
+              </div>
+            </div>
+            <div class="disclaimer-strip">
+              <strong>Advisory only.</strong> This checklist reflects CCMC requirements as of March 2026. Document requirements may vary. Verify with your agency before submission.
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Readiness Score</div></div>
+            </div>
+            <div style="padding:22px;display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:16px;">
+                <div style="font-size:48px;font-weight:300;font-family:'DM Mono',monospace;letter-spacing:-2px;color:var(--accent)">5<span style="font-size:20px;color:var(--text-secondary)">/8</span></div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;color:var(--text-primary)">Documents Ready</div>
+                  <div style="font-size:11.5px;color:var(--text-secondary);margin-top:2px">3 need attention before agency visit</div>
+                </div>
+              </div>
+              <div class="mini-progress"><div class="mini-progress-fill" style="width:62%"></div></div>
+              <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.6;">⚠ EC must be renewed (within 30 days). Site Plan and Architect Certificate must be arranged before agency visit.</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Common Failures</div><div class="panel-title-sub">From agency field research</div></div>
+            </div>
+            <div class="feed">
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#FF6B6B">!</div>
+                <div class="feed-body">
+                  <div class="feed-name">EC Date Expired</div>
+                  <div class="feed-text">Most common — EC older than 30 days at time of submission</div>
+                  <div class="feed-time">Rejection rate: Very High</div>
+                </div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#FFD600">!</div>
+                <div class="feed-body">
+                  <div class="feed-name">Name Mismatch</div>
+                  <div class="feed-text">Owner name differs between Sale Deed, Patta and application form</div>
+                  <div class="feed-time">Rejection rate: High</div>
+                </div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#FF6B1A">!</div>
+                <div class="feed-body">
+                  <div class="feed-name">Non-eDCR Drawing Format</div>
+                  <div class="feed-text">Architect submits PDF or non-standard DXF — fails pre-check engine</div>
+                  <div class="feed-time">Rejection rate: High</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: RULES ══ -->
+    <div class="page-section" id="page-rules">
+
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">Knowledge Base</div>
+          <h1 class="page-title" data-i18n="rulesTitle">Rule Explainer</h1>
+          <p class="page-subtitle" data-i18n="rulesSub">Ask any question about TNCDBR 2019 or CCMC bye-laws in plain Tamil or English — with source citations.</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-ghost" id="lang-toggle-btn" onclick="toggleLanguage()">
+            <svg viewBox="0 0 24 24"><path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
+            <span id="lang-toggle-label">Switch to Tamil</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Ask a Rule Question</div><div class="panel-title-sub">Grounded in TNCDBR 2019 · Cited to source</div></div>
+            </div>
+            <div class="form-body">
+              <div class="field">
+                <label class="field-label">Jurisdiction</label>
+                <select class="field-select" id="r-jurisdiction">
+                  <option value="CCMC">CCMC — Coimbatore City</option>
+                  <option value="DTCP">DTCP — Tamil Nadu</option>
+                  <option value="LPA">LPA — Local Planning Area</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">Your Question</label>
+                <textarea class="field-input" id="r-question" rows="3" style="resize:vertical;" data-i18n-placeholder="explainPlaceholder" placeholder="e.g. What is the minimum front setback for a 20ft road in CCMC residential zone?"></textarea>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-primary" onclick="askRule()">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Ask BuildIQ
+              </button>
+            </div>
+          </div>
+
+          <div class="panel" id="rule-answer-panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Answer</div><div class="panel-title-sub" id="rule-answer-meta">Awaiting question</div></div>
+            </div>
+            <div id="rule-answer-container">
+              <div class="empty-state">
+                <div class="empty-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                <div class="empty-title">Ask a question</div>
+                <div class="empty-sub">Answers grounded in verified TNCDBR 2019 text with citations</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Suggested Questions</div></div>
+            </div>
+            <div class="doc-list">
+              <div class="doc-item" style="cursor:pointer" onclick="fillQuestion('What is the minimum front setback for a residential building on a 20ft road?')">
+                <div class="doc-info"><div class="doc-name">Setback for 20ft road?</div><div class="doc-meta">TNCDBR 2019 Rule 9</div></div>
+                <span class="doc-status ds-review">Ask →</span>
+              </div>
+              <div class="doc-item" style="cursor:pointer" onclick="fillQuestion('What is the maximum FAR permitted for residential R1 zone in Coimbatore?')">
+                <div class="doc-info"><div class="doc-name">Max FAR for Residential R1?</div><div class="doc-meta">TNCDBR 2019, Table 2</div></div>
+                <span class="doc-status ds-review">Ask →</span>
+              </div>
+              <div class="doc-item" style="cursor:pointer" onclick="fillQuestion('What changed in the March 2024 amendment regarding building height?')">
+                <div class="doc-info"><div class="doc-name">March 2024 height change?</div><div class="doc-meta">G.O.Ms.No.70, 11-03-2024</div></div>
+                <span class="doc-status ds-review">Ask →</span>
+              </div>
+              <div class="doc-item" style="cursor:pointer" onclick="fillQuestion('Is rainwater harvesting mandatory? For which plot sizes?')">
+                <div class="doc-info"><div class="doc-name">Rainwater harvesting rules?</div><div class="doc-meta">TNCDBR 2019</div></div>
+                <span class="doc-status ds-review">Ask →</span>
+              </div>
+              <div class="doc-item" style="cursor:pointer" onclick="fillQuestion('How many parking spaces are required for a 3-floor residential building?')">
+                <div class="doc-info"><div class="doc-name">Parking requirements?</div><div class="doc-meta">TNCDBR 2019, Rule 12</div></div>
+                <span class="doc-status ds-review">Ask →</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Rule Updates</div><div class="panel-title-sub">Recent Government Orders</div></div>
+            </div>
+            <div class="feed">
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#FF6B1A">GO</div>
+                <div class="feed-body">
+                  <div class="feed-name">G.O.Ms.No.154 — Oct 2025</div>
+                  <div class="feed-text">Latest amendment to TNCDBR 2019 — verify rules affected</div>
+                  <div class="feed-time">October 2025</div>
+                </div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#2979FF">GO</div>
+                <div class="feed-body">
+                  <div class="feed-name">G.O.Ms.No.70 — Mar 2024</div>
+                  <div class="feed-text">Height limit raised to 14m for non-high-rise. Setback revisions included.</div>
+                  <div class="feed-time">March 11, 2024</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: FEES ══ -->
+    <div class="page-section" id="page-fees">
+
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">Cost Intelligence</div>
+          <h1 class="page-title">Fee Calculator</h1>
+          <p class="page-subtitle">Estimate government fees and compare agency benchmarks before committing to any service.</p>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card highlight">
+          <div class="stat-label">Govt Fee (100 sq.m)<span class="stat-dot"></span></div>
+          <div class="stat-value">₹25<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">k</span></div>
+          <div class="stat-change neutral">CCMC residential estimate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Agency Min</div>
+          <div class="stat-value">₹15<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">k</span></div>
+          <div class="stat-change neutral">Coimbatore market</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Agency Max</div>
+          <div class="stat-value">₹40<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">k</span></div>
+          <div class="stat-change down"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>Above ₹50k — seek 2nd opinion</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Typical Budget</div>
+          <div class="stat-value">₹40<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">k</span></div>
+          <div class="stat-change neutral">Govt + agency combined</div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Fee Estimate</div><div class="panel-title-sub">Government fees + agency market benchmark</div></div>
+            </div>
+            <div class="form-body">
+              <div class="form-row">
+                <div class="field">
+                  <label class="field-label">Authority</label>
+                  <select class="field-select" id="f-authority">
+                    <option value="CCMC">CCMC — Coimbatore City</option>
+                    <option value="DTCP">DTCP — Tamil Nadu</option>
+                    <option value="LPA">LPA — Local Planning Area</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field-label">Building Type</label>
+                  <select class="field-select" id="f-btype">
+                    <option value="residential">Residential</option>
+                    <option value="commercial">Commercial</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label">Proposed Built-up Area (sq.m)</label>
+                <input class="field-input" type="number" id="f-area" min="10" value="150" placeholder="e.g. 150">
+                <span class="field-hint">Category I: up to 150 sq.m · Category II: 150–500 sq.m</span>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-primary" onclick="runFee()">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                Calculate Fees
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel" id="fee-result-panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Fee Breakdown</div><div class="panel-title-sub" id="fee-result-sub">Run estimate to see results</div></div>
+            </div>
+            <div id="fee-result-container">
+              <div class="empty-state">
+                <div class="empty-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+                <div class="empty-title">No estimate yet</div>
+                <div class="empty-sub">Fill the form and click Calculate Fees</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Market Intelligence</div><div class="panel-title-sub">Coimbatore agency rates 2026</div></div>
+            </div>
+            <div class="feed">
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#39FF82">KP</div>
+                <div class="feed-body">
+                  <div class="feed-name">Kovai Planners</div>
+                  <div class="feed-text">Standard residential package — ₹18,000–25,000 depending on complexity</div>
+                  <div class="feed-time">Field research · March 2026</div>
+                </div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#BF5FFF">KA</div>
+                <div class="feed-body">
+                  <div class="feed-name">Kongunadu Associates</div>
+                  <div class="feed-text">Full service including eDCR resubmission — ₹20,000–35,000</div>
+                  <div class="feed-time">Field research · March 2026</div>
+                </div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#FF6B1A">!</div>
+                <div class="feed-body">
+                  <div class="feed-name">Warning Threshold</div>
+                  <div class="feed-text">Any quote above ₹50,000 for standard residential — get a second opinion</div>
+                  <div class="feed-time">BuildIQ advisory</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: MARKETPLACE ══ -->
+    <div class="page-section" id="page-marketplace">
+
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">₹999 Submission</div>
+          <h1 class="page-title">Architect Marketplace</h1>
+          <p class="page-subtitle">Your BuildIQ package goes to a verified architect. They review, certify, and submit to eDCR in 20 minutes. Total cost: ₹999.</p>
+        </div>
+      </div>
+
+      <!-- How it works -->
+      <div class="panel">
+        <div class="panel-header">
+          <div><div class="panel-title">How ₹999 Submission Works</div></div>
+        </div>
+        <div class="pipeline">
+
+          <div class="pipeline-step">
+            <div class="step-node done">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="step-body">
+              <div class="step-title">You run BuildIQ compliance check<span class="step-status-pill pill-done">Free</span></div>
+              <div class="step-meta">Upload sketch → auto-fill → compliance check → download package ZIP</div>
+            </div>
+          </div>
+
+          <div class="pipeline-step">
+            <div class="step-node active">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+            </div>
+            <div class="step-body">
+              <div class="step-title">Select a verified architect<span class="step-status-pill pill-active">₹999</span></div>
+              <div class="step-meta">Architect receives your BuildIQ package. Reviews DXF shell, verifies dimensions, completes room layouts.</div>
+            </div>
+          </div>
+
+          <div class="pipeline-step">
+            <div class="step-node pending">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <div class="step-body">
+              <div class="step-title">Architect submits to eDCR<span class="step-status-pill pill-pending">20 min</span></div>
+              <div class="step-meta">Architect certifies with TNCA number and submits using their eDCR login. CCMC approves in 3–7 days.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card highlight">
+          <div class="stat-label">Your cost<span class="stat-dot"></span></div>
+          <div class="stat-value">₹999</div>
+          <div class="stat-change up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg> vs ₹40,000 agency fee</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Architect turnaround</div>
+          <div class="stat-value">20<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">min</span></div>
+          <div class="stat-change neutral">Package pre-verified by BuildIQ</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">CCMC approval time</div>
+          <div class="stat-value">3<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">–7d</span></div>
+          <div class="stat-change neutral">AutoDCR processed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">You save</div>
+          <div class="stat-value">₹39<span style="font-size:16px;color:var(--text-secondary);font-family:'DM Sans'">k</span></div>
+          <div class="stat-change up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg> vs Kovai Planners</div>
+        </div>
+      </div>
+
+      <!-- Architect listings + Request form -->
+      <div class="content-grid">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Verified Architects</div>
+                <div class="panel-title-sub">TNCA registered · BuildIQ certified · Coimbatore</div>
+              </div>
+            </div>
+            <div class="project-list" id="architect-list">
+              <div class="empty-state" style="padding:32px 0">
+                <div class="empty-sub">Loading architects...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Request Submission</div>
+                <div class="panel-title-sub">Package must be ready first</div>
+              </div>
+            </div>
+            <div class="form-body">
+              <div class="field">
+                <label class="field-label">Your Name</label>
+                <input class="field-input" type="text" id="mkt-name" placeholder="e.g. Ravi Kumar">
+              </div>
+              <div class="field">
+                <label class="field-label">Phone Number</label>
+                <input class="field-input" type="tel" id="mkt-phone" placeholder="e.g. 98765 43210">
+              </div>
+              <div class="field">
+                <label class="field-label">Select Architect</label>
+                <select class="field-select" id="mkt-arch">
+                  <option value="">Loading architects...</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">BuildIQ Package Ready?</label>
+                <select class="field-select" id="mkt-pkg">
+                  <option value="yes">Yes — I downloaded my submission package</option>
+                  <option value="no">No — I need to run compliance check first</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-primary" id="mkt-submit-btn" onclick="requestSubmission()">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Request for ₹999
+              </button>
+            </div>
+            <div id="mkt-confirm"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-title">Why ₹999 Works</div></div>
+            </div>
+            <div class="feed">
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:var(--accent)">AI</div>
+                <div class="feed-body">
+                  <div class="feed-name">BuildIQ does the hard work</div>
+                  <div class="feed-text">Compliance check, document list, DXF shell — all pre-verified. Architect only certifies.</div>
+                </div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#2979FF">⚡</div>
+                <div class="feed-body">
+                  <div class="feed-name">Architect earns more</div>
+                  <div class="feed-text">15 submissions/day × ₹999 = ₹15,000/day. More than an agency partner earns.</div>
+                </div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-avatar" style="background:#FFD600">₹</div>
+                <div class="feed-body">
+                  <div class="feed-name">Owner saves ₹39,000</div>
+                  <div class="feed-text">Same approved plan. Same 3–7 day CCMC timeline. Fraction of the cost.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ PAGE: SOURCE VIEWER ══ -->
+    <div class="page-section" id="page-source-viewer">
+
+      <div class="page-header">
+        <div class="page-title-group">
+          <div class="page-eyebrow">Document Viewer</div>
+          <h1 class="page-title">Source Viewer</h1>
+          <p class="page-subtitle">View original TNCDBR regulation pages with live search and text highlights.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title" id="pdf-doc-title">Source Document</div>
+            <div class="panel-title-sub" id="pdf-doc-sub">Select a document below to begin</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn-ghost" id="pdf-zoom-out" onclick="pdfZoom(-0.25)">−</button>
+            <span id="pdf-zoom-level" style="color:var(--text-secondary);font-size:13px;min-width:40px;text-align:center">100%</span>
+            <button class="btn-ghost" id="pdf-zoom-in" onclick="pdfZoom(0.25)">+</button>
+            <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+            <button class="btn-ghost" id="pdf-prev-page" onclick="pdfChangePage(-1)">← Prev</button>
+            <span id="pdf-page-info" style="color:var(--text-secondary);font-size:13px;min-width:80px;text-align:center">Page — of —</span>
+            <button class="btn-ghost" id="pdf-next-page" onclick="pdfChangePage(1)">Next →</button>
+          </div>
+        </div>
+
+        <!-- Search bar -->
+        <div style="padding:0 16px 12px;display:flex;gap:8px">
+          <input id="pdf-search-input" class="field-input"
+            placeholder="Search in document... e.g. setback, FSI, height"
+            style="flex:1"
+            onkeydown="if(event.key==='Enter') pdfSearch()">
+          <button class="btn-primary" onclick="pdfSearch()" style="padding:8px 16px;font-size:13px">Search</button>
+          <button class="btn-ghost" onclick="pdfClearSearch()" style="padding:8px 16px;font-size:13px">Clear</button>
+        </div>
+
+        <!-- Canvas container -->
+        <div id="pdf-canvas-container" style="overflow:auto;background:#1a1a1a;border-radius:8px;margin:0 16px 16px;min-height:600px;display:flex;align-items:flex-start;justify-content:center;padding:20px;position:relative">
+          <div style="position:relative;display:inline-block">
+            <canvas id="pdf-canvas" style="display:block;box-shadow:0 4px 24px rgba(0,0,0,0.4)"></canvas>
+            <div id="pdf-text-layer" style="position:absolute;top:0;left:0;pointer-events:none;overflow:hidden"></div>
+          </div>
+          <div id="pdf-loading" style="position:absolute;color:var(--text-secondary);font-size:14px;top:50%;transform:translateY(-50%)">Select a document to view</div>
+        </div>
+
+        <!-- Document selector -->
+        <div style="padding:0 16px 16px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-ghost" onclick="loadPdf('TNCDBR_2019_base.pdf',1,null)" style="font-size:12px">
+            TNCDBR 2019 Base Rules
+          </button>
+          <button class="btn-ghost" onclick="loadPdf('TNCDBR_2019_amendments_GO16_Jan2020.pdf',1,null)" style="font-size:12px">
+            Amendments GO16 2020
+          </button>
+          <button class="btn-ghost" onclick="loadPdf('TNCDBR_GO_154_Oct2025.pdf',1,null)" style="font-size:12px">
+            GO154 Oct 2025
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- ── Citation Modal ──────────────────────────────────────────────────── -->
+<div id="citation-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius);width:700px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;">
+    <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div id="citation-modal-title" style="font-size:13px;font-weight:500;color:var(--text-primary);"></div>
+      <button onclick="closeCitationModal()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:18px;line-height:1;">×</button>
+    </div>
+    <div style="padding:22px;overflow-y:auto;flex:1;">
+      <div id="citation-text-display" style="font-size:13px;line-height:1.8;color:var(--text-primary);background:var(--bg-2);padding:16px;border-radius:8px;border-left:3px solid var(--accent);"></div>
+      <div id="citation-meta" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000'
+    : 'https://buildiq-api.onrender.com';
+  let currentLang = localStorage.getItem('buildiq_lang') || 'en';
+
+  // ─── Page navigation ───────────────────────────────────────
+  const PAGE_META = {
+    jurisdiction: { eyebrow:'Pre-Submission', title:'Jurisdiction Check', subtitle:'Find out which authority governs your plot — CCMC, DTCP, or LPA — before spending on drawings or agencies.', breadcrumb:'Jurisdiction Check', cta:'New Check', theme:'jurisdiction' },
+    compliance:   { eyebrow:'Quality Control', title:'Compliance Estimator', subtitle:'Check setbacks, FAR, coverage and height against TNCDBR 2019 rules before submitting to any agency.', breadcrumb:'Compliance Estimator', cta:'Run Check', theme:'compliance' },
+    documents:    { eyebrow:'Document Hub', title:'Document Advisor', subtitle:'Know exactly which documents you need and what makes each one fail at agency level — before your first visit.', breadcrumb:'Document Advisor', cta:'Download List', theme:'documents' },
+    rules:        { eyebrow:'Knowledge Base', title:'Rule Explainer', subtitle:'Ask any question about TNCDBR 2019 or CCMC bye-laws in plain Tamil or English — with source citations.', breadcrumb:'Rule Explainer', cta:'Ask Question', theme:'rules' },
+    fees:         { eyebrow:'Cost Intelligence', title:'Fee Calculator', subtitle:'Estimate government fees and compare agency benchmarks before committing to any service.', breadcrumb:'Fee Calculator', cta:'Calculate', theme:'fees' },
+    marketplace:   { eyebrow:'₹999 Submission',   title:'Architect Marketplace', subtitle:'Connect with a verified architect who receives your BuildIQ package and submits to eDCR in 20 minutes.', breadcrumb:'Architect Marketplace', cta:'Request Submission', theme:'marketplace' },
+    'source-viewer': { eyebrow:'Document Viewer', title:'Source Viewer',         subtitle:'View original TNCDBR regulation pages with live search and yellow text highlights.', breadcrumb:'Source Viewer', cta:'Open Document', theme:'source-viewer' },
+  };
+
+  function setPage(pageId, title, eyebrow, subtitle, clickedEl) {
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('visible'));
+    document.getElementById('page-' + pageId).classList.add('visible');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (clickedEl) clickedEl.classList.add('active');
+    const m = PAGE_META[pageId];
+    document.getElementById('breadcrumb-active').textContent = m.breadcrumb;
+    document.getElementById('cta-label').textContent = m.cta;
+    document.body.setAttribute('data-page', m.theme);
+    document.querySelector('.page-eyebrow') && document.querySelectorAll('.page-eyebrow').forEach(e => e.textContent = m.eyebrow);
+  }
+
+  // ─── Language toggle ────────────────────────────────────────
+  const TRANSLATIONS = {
+    en: {
+      jurisdictionTitle: 'Jurisdiction Check',
+      jurisdictionSub: 'Find out which authority governs your plot — CCMC, DTCP, or LPA — before spending on drawings or agencies.',
+      complianceTitle: 'Compliance Estimator',
+      complianceSub: 'Check your setbacks, FAR, coverage and height against TNCDBR 2019 rules before submitting to any agency.',
+      rulesTitle: 'Rule Explainer',
+      rulesSub: 'Ask any question about TNCDBR 2019 or CCMC bye-laws in plain Tamil or English — with source citations.',
+      explainPlaceholder: 'e.g. What is the minimum front setback for a 20ft road in CCMC residential zone?',
+      langToggle: 'Switch to Tamil',
+    },
+    ta: {
+      jurisdictionTitle: 'அதிகாரப் பகுதி சரிபார்ப்பு',
+      jurisdictionSub: 'உங்கள் மனை CCMC, DTCP அல்லது LPA கட்டுப்பாட்டில் உள்ளதா என்று அறியுங்கள்.',
+      complianceTitle: 'இணக்கத்தன்மை மதிப்பீட்டாளர்',
+      complianceSub: 'TNCDBR 2019 விதிகளின்படி setback, FAR, coverage மற்றும் height சரிபார்க்கவும்.',
+      rulesTitle: 'விதி விளக்கி',
+      rulesSub: 'TNCDBR 2019 அல்லது CCMC bye-laws பற்றிய கேள்விகளை தமிழில் அல்லது ஆங்கிலத்தில் கேளுங்கள்.',
+      explainPlaceholder: 'எ.கா. 20ft சாலையில் CCMC residential zone-ல் minimum front setback என்ன?',
+      langToggle: 'Switch to English',
+    }
+  };
+
+  function toggleLanguage() {
+    currentLang = currentLang === 'en' ? 'ta' : 'en';
+    localStorage.setItem('buildiq_lang', currentLang);
+    applyLanguage();
+  }
+
+  function applyLanguage() {
+    const t = TRANSLATIONS[currentLang];
+    // Update topbar button label
+    const topbarLabel = document.getElementById('topbar-lang-label');
+    if (topbarLabel) topbarLabel.textContent = currentLang === 'en' ? 'EN' : 'தமிழ்';
+    // Update Rule Explainer page toggle button
+    const ruleLbl = document.getElementById('lang-toggle-label');
+    if (ruleLbl) ruleLbl.textContent = t.langToggle;
+    // Apply data-i18n elements
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (t[key]) el.textContent = t[key];
+    });
+    // Apply data-i18n-placeholder elements
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (t[key]) el.placeholder = t[key];
+    });
+  }
+
+  // Apply saved language on load
+  applyLanguage();
+  loadArchitects();
+
+  // ─── Jurisdiction ───────────────────────────────────────────
+  async function runJurisdiction() {
+    const location = document.getElementById('j-location').value;
+    const acres = parseFloat(document.getElementById('j-acres').value);
+    const floors = parseInt(document.getElementById('j-floors').value);
+    const use = document.getElementById('j-use').value;
+    const inCity = location === 'city';
+    try {
+      const res = await fetch(`${API}/api/jurisdiction`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ in_city_limits: inCity, plot_area_acres: acres, floors, building_type: use }) });
+      const data = await res.json();
+      showJurisdictionResult(data);
+    } catch(e) {
+      // Fallback: pure frontend logic if API unavailable
+      let authority, note, helpline, timeline;
+      if (inCity && acres < 2.47 && floors <= 5) { authority='CCMC'; note='Coimbatore City Municipal Corporation — AutoDCR processed'; helpline='0422-2390261'; timeline='Approval: 3–7 days'; }
+      else if (acres >= 2.47) { authority='DTCP'; note='Layout above 2.47 acres requires DTCP approval'; helpline='044-29585247'; timeline='Approval: 4–6 months'; }
+      else { authority='LPA'; note='Local Planning Area — check with DTCP regional office'; helpline='044-29585247'; timeline='Approval: varies'; }
+      showJurisdictionResult({ authority, note, helpline, approval_time: timeline });
+    }
+  }
+
+  function showJurisdictionResult(data) {
+    document.getElementById('j-authority-pill').textContent = data.authority;
+    document.getElementById('j-authority-note').textContent = data.note || data.authority;
+    document.getElementById('j-helpline').textContent = data.helpline || '—';
+    document.getElementById('j-timeline').textContent = data.approval_time || '—';
+    document.getElementById('j-next-step').textContent = data.authority === 'CCMC' ? 'Collect documents and run compliance check → 3–7 day approval after submission' : data.authority === 'DTCP' ? 'Engage a DTCP-registered agency — 4–6 month timeline expected' : 'Check with DTCP regional office for LPA requirements';
+    document.getElementById('j-result-sub').textContent = data.authority + ' — ' + (data.note || '');
+    document.getElementById('j-result-panel').style.display = 'block';
+  }
+
+  // ─── OCR sketch upload ──────────────────────────────────────
+  async function handleSketchUpload(input) {
+    if (!input.files[0]) return;
+    processSketchFile(input.files[0]);
+  }
+
+  function handleSketchDrop(event) {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) processSketchFile(file);
+  }
+
+  function resetOcr() {
+    document.getElementById('ocr-drop-zone').style.display = 'block';
+    document.getElementById('ocr-preview').style.display = 'none';
+    document.getElementById('sketch-upload').value = '';
+  }
+
+  async function processSketchFile(file) {
+    document.getElementById('ocr-drop-zone').style.display = 'none';
+    document.getElementById('ocr-preview').style.display = 'block';
+
+    const reader = new FileReader();
+    reader.onload = e => { document.getElementById('ocr-thumb').src = e.target.result; };
+    reader.readAsDataURL(file);
+
+    const statusEl = document.getElementById('ocr-status');
+    statusEl.textContent = 'Claude Vision is reading your sketch...';
+    statusEl.style.color = '#2979FF';
+    document.getElementById('ocr-notes').textContent = '';
+    document.getElementById('ocr-confidence').innerHTML = '';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(`${API}/api/ocr-sketch`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('OCR failed');
+      const data = await res.json();
+
+      // road_width_ft and floors are selects — snap to nearest valid option
+      const snapSelect = (id, val) => {
+        if (val === null || val === undefined) return false;
+        const el = document.getElementById(id);
+        if (!el) return false;
+        const options = Array.from(el.options).map(o => Number(o.value));
+        const nearest = options.reduce((a, b) => Math.abs(b - val) < Math.abs(a - val) ? b : a);
+        el.value = nearest;
+        return true;
+      };
+
+      const fieldMap = {
+        'provided_front_m': 'c-front',
+        'provided_rear_m':  'c-rear',
+        'provided_side_m':  'c-side',
+        'plot_area_sqm':    'c-plot',
+        'proposed_builtup_sqm': 'c-builtup',
+        'proposed_height_m': 'c-height',
+      };
+
+      let filled = 0;
+      if (snapSelect('c-road', data.road_width_ft)) filled++;
+      if (snapSelect('c-floors', data.floors)) filled++;
+      Object.entries(fieldMap).forEach(([key, id]) => {
+        if (data[key] !== null && data[key] !== undefined) {
+          const el = document.getElementById(id);
+          if (el) { el.value = data[key]; filled++; }
+        }
+      });
+
+      const pct = Math.round((data.confidence || 0) * 100);
+      statusEl.textContent = `${filled} fields filled from your sketch`;
+      statusEl.style.color = '#39FF82';
+      document.getElementById('ocr-notes').textContent = data.notes || '';
+      document.getElementById('ocr-confidence').innerHTML =
+        `<span style="font-size:11px;color:var(--text-tertiary)">OCR confidence: </span>` +
+        `<span style="font-size:11px;font-weight:500;color:${pct>70?'#39FF82':pct>40?'#FFD600':'#FF6B1A'}">${pct}%</span>` +
+        `<span style="font-size:11px;color:var(--text-tertiary)"> — review fields before running check</span>`;
+
+    } catch(e) {
+      statusEl.textContent = 'Could not read sketch — please fill form manually';
+      statusEl.style.color = '#FF6B1A';
+    }
+  }
+
+  // ─── Radar chart ────────────────────────────────────────────
+  let radarChartInstance = null;
+
+  function renderRadarChart(byName) {
+    document.getElementById('radar-panel').style.display = 'block';
+
+    const rules = ['Setback', 'FAR', 'Coverage', 'Height', 'Parking'];
+    const ruleKeys = ['Setback', 'Floor Area Ratio (FAR)', 'Ground Coverage', 'Building Height', 'Parking'];
+    const scores = ruleKeys.map(k => byName[k]?.confidence_pct ?? (byName[k]?.status === 'PASS' ? 90 : byName[k]?.status === 'MARGINAL' ? 60 : 20));
+
+    const overall = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    const badge = document.getElementById('overall-score-badge');
+    badge.textContent = overall + '% — ' + (overall >= 80 ? 'PASS' : overall >= 60 ? 'MARGINAL' : 'FAIL');
+    badge.style.background = overall >= 80 ? 'rgba(57,255,130,0.15)' : overall >= 60 ? 'rgba(255,214,0,0.15)' : 'rgba(255,107,26,0.15)';
+    badge.style.color = overall >= 80 ? '#39FF82' : overall >= 60 ? '#FFD600' : '#FF6B1A';
+
+    if (radarChartInstance) radarChartInstance.destroy();
+
+    radarChartInstance = new Chart(document.getElementById('radarChart'), {
+      type: 'radar',
+      data: {
+        labels: rules,
+        datasets: [{
+          label: 'Your building',
+          data: scores,
+          backgroundColor: 'rgba(41,121,255,0.15)',
+          borderColor: '#2979FF',
+          borderWidth: 2,
+          pointBackgroundColor: scores.map(s => s >= 80 ? '#39FF82' : s >= 60 ? '#FFD600' : '#FF6B1A'),
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0, max: 100,
+            ticks: { display: false, stepSize: 20 },
+            grid: { color: 'rgba(255,255,255,0.06)' },
+            pointLabels: { color: '#888', font: { size: 12, family: 'DM Sans' } },
+            angleLines: { color: 'rgba(255,255,255,0.06)' }
+          }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    const list = document.getElementById('rule-summary-list');
+    list.innerHTML = rules.map((r, i) => {
+      const s = Math.round(scores[i]);
+      const color = s >= 80 ? '#39FF82' : s >= 60 ? '#FFD600' : '#FF6B1A';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;
+        padding:8px 12px;background:var(--bg-3);border-radius:6px">
+        <span style="font-size:13px;color:var(--text-secondary)">${r}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:80px;height:4px;background:var(--bg-4);border-radius:2px;overflow:hidden">
+            <div style="width:${s}%;height:100%;background:${color};border-radius:2px"></div>
+          </div>
+          <span style="font-size:13px;font-weight:500;color:${color};min-width:36px;text-align:right">${s}%</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ─── Approval timeline ───────────────────────────────────────
+  function renderApprovalTimeline(complianceStatus) {
+    document.getElementById('timeline-panel').style.display = 'block';
+
+    const passed = complianceStatus === 'PASS' || complianceStatus === 'MARGINAL';
+
+    const stages = [
+      { name: 'BuildIQ pre-check', days: 0, fee: '₹0', status: 'done',
+        detail: 'Compliance verified, submission package ready' },
+      { name: 'Collect documents', days: 7, fee: '₹0', status: passed ? 'active' : 'blocked',
+        detail: 'Sale deed, Patta, EC (within 30 days), FMB sketch, tax receipt' },
+      { name: 'Architect certification', days: 1, fee: '₹999', status: passed ? 'pending' : 'blocked',
+        detail: 'TNCA registered architect reviews DXF, certifies, submits eDCR' },
+      { name: 'eDCR submission', days: 1, fee: '₹0', status: 'pending',
+        detail: 'AutoDCR processes plan automatically via CCMC portal' },
+      { name: 'Fee payment', days: 1, fee: 'Scrutiny + permit + dev charges', status: 'pending',
+        detail: 'Pay government fees online. Typically ₹8,000–₹25,000 for residential' },
+      { name: 'CCMC approval', days: 3, fee: '₹0', status: 'pending',
+        detail: 'Digital approval certificate issued. Usually 3–7 working days.' }
+    ];
+
+    const totalDays = stages.reduce((a, s) => a + s.days, 0);
+    document.getElementById('total-timeline-days').textContent = `Total: ~${totalDays} days`;
+
+    const colors = { done: '#39FF82', active: '#2979FF', pending: '#444', blocked: '#FF6B1A' };
+    const labels = { done: 'Complete', active: 'Next step', pending: 'Upcoming', blocked: 'Fix compliance first' };
+
+    document.getElementById('timeline-stages').innerHTML = stages.map((s, i) => `
+      <div style="display:flex;gap:16px;position:relative">
+        <div style="display:flex;flex-direction:column;align-items:center;width:32px;flex-shrink:0">
+          <div style="width:28px;height:28px;border-radius:50%;background:${colors[s.status]}22;
+            border:1.5px solid ${colors[s.status]};display:flex;align-items:center;
+            justify-content:center;font-size:11px;font-weight:500;color:${colors[s.status]}">
+            ${s.status === 'done' ? '✓' : i + 1}
+          </div>
+          ${i < stages.length - 1 ? `<div style="width:1.5px;flex:1;min-height:24px;
+            background:${colors[s.status]}33;margin:4px 0"></div>` : ''}
+        </div>
+        <div style="padding-bottom:20px;flex:1">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div style="font-size:13px;font-weight:500;color:${s.status === 'pending' ? 'var(--text-secondary)' : 'var(--text-primary)'}">
+              ${s.name}
+            </div>
+            <div style="display:flex;gap:12px;align-items:center">
+              ${s.days > 0 ? `<span style="font-size:11px;color:var(--text-tertiary)">${s.days} day${s.days > 1 ? 's' : ''}</span>` : ''}
+              <span style="font-size:11px;font-weight:500;color:${colors[s.status]}">${s.fee}</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.5">${s.detail}</div>
+          <div style="display:inline-block;margin-top:6px;font-size:10px;padding:2px 8px;
+            border-radius:10px;background:${colors[s.status]}15;color:${colors[s.status]}">
+            ${labels[s.status]}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ─── Compliance ─────────────────────────────────────────────
+  async function runCompliance() {
+    const btn = document.getElementById('comp-btn');
+    btn.innerHTML = '<span class="spinner"></span> Checking...';
+    btn.disabled = true;
+    const payload = {
+      road_width_ft: parseInt(document.getElementById('c-road').value),
+      provided_front_m: parseFloat(document.getElementById('c-front').value),
+      provided_rear_m: parseFloat(document.getElementById('c-rear').value),
+      provided_side_m: parseFloat(document.getElementById('c-side').value),
+      plot_area_sqm: parseFloat(document.getElementById('c-plot').value),
+      proposed_builtup_sqm: parseFloat(document.getElementById('c-builtup').value),
+      footprint_sqm: parseFloat(document.getElementById('c-footprint').value),
+      proposed_height_m: parseFloat(document.getElementById('c-height').value),
+      floors: parseInt(document.getElementById('c-floors').value),
+      zone_type: document.getElementById('c-zone').value,
+      building_type: document.getElementById('c-btype').value,
+      language: currentLang,
+    };
+    try {
+      const res = await fetch(`${API}/api/check-compliance`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const data = await res.json();
+      renderComplianceResults(data);
+    } catch(e) {
+      document.getElementById('comp-results-container').innerHTML = `<div class="loading-state" style="color:#FF6B6B">⚠ Could not reach API at ${API}. Start the backend server.</div>`;
+    } finally {
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="22 4 12 14.01 9 11.01"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> Run Compliance Check';
+      btn.disabled = false;
+    }
+  }
+
+  function renderComplianceResults(data) {
+    if (data.error) {
+      document.getElementById('comp-results-container').innerHTML = `<div class="loading-state" style="color:#FF6B6B">⚠ ${data.message}</div>`;
+      return;
+    }
+    window.lastComplianceStatus = data.overall_status;
+    const statusClass = data.overall_status.toLowerCase();
+    const statusIcon = statusClass === 'pass' ? '🟢' : statusClass === 'marginal' ? '🟡' : '🔴';
+    // Update stat cards
+    const results = data.results;
+    const byName = {};
+    results.forEach(r => { byName[r.rule_name] = r; });
+    const setS = byName['Setback'] || {};
+    const farS = byName['Floor Area Ratio (FAR)'] || {};
+    const covS = byName['Ground Coverage'] || {};
+    const htS  = byName['Building Height'] || {};
+    const colorOf = s => s === 'PASS' ? '#39FF82' : s === 'MARGINAL' ? '#FFD600' : '#FF6B6B';
+    const arrowOf = s => s === 'PASS' ? '<svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>' : '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>';
+    const setEl = document.getElementById('cs-setback');
+    if (setEl && setS.status) { setEl.textContent = setS.status; setEl.style.fontSize='18px'; setEl.style.letterSpacing='-0.5px'; setEl.style.color = colorOf(setS.status); document.getElementById('cs-setback-sub').innerHTML = `<span style="color:${colorOf(setS.status)}">${arrowOf(setS.status)}</span> ${setS.gap > 0 ? 'Over by '+Math.abs(setS.gap).toFixed(1)+'m' : setS.gap < 0 ? 'Under by '+Math.abs(setS.gap).toFixed(1)+'m' : 'Exact'}`; }
+    const farEl = document.getElementById('cs-far');
+    if (farEl && farS.status) { farEl.textContent = farS.provided_value ? farS.provided_value.toFixed(2) : farS.status; farEl.style.color = colorOf(farS.status); document.getElementById('cs-far-sub').innerHTML = `<span style="color:${colorOf(farS.status)}">${arrowOf(farS.status)}</span> ${farS.status} · Permitted ${farS.required_value}`; }
+    const covEl = document.getElementById('cs-cov');
+    if (covEl && covS.status) { covEl.textContent = covS.provided_value ? (covS.provided_value*100).toFixed(0)+'%' : covS.status; covEl.style.color = colorOf(covS.status); document.getElementById('cs-cov-sub').innerHTML = `<span style="color:${colorOf(covS.status)}">${arrowOf(covS.status)}</span> ${covS.status} · Max ${covS.required_value ? (covS.required_value*100).toFixed(0) : '—'}%`; }
+    const htEl = document.getElementById('cs-ht');
+    if (htEl && htS.status) { htEl.textContent = htS.provided_value ? htS.provided_value+'m' : htS.status; htEl.style.color = colorOf(htS.status); document.getElementById('cs-ht-sub').innerHTML = `<span style="color:${colorOf(htS.status)}">${arrowOf(htS.status)}</span> ${htS.status} · Max ${htS.required_value}m`; }
+
+    const cardsHtml = results.map(r => {
+      const sc = r.status.toLowerCase().replace(' ','');
+      const pClass = sc === 'pass' ? 'pill-pass' : sc === 'marginal' ? 'pill-marginal' : 'pill-fail';
+      const cClass = sc === 'pass' ? 'pass' : sc === 'marginal' ? 'marginal' : 'fail';
+      const icon = sc === 'pass' ? '🟢' : sc === 'marginal' ? '🟡' : '🔴';
+      return `<div class="result-card ${cClass}">
+        <div class="result-top">
+          <div class="result-name">${r.rule_name}</div>
+          <span class="result-pill ${pClass}">${r.status}</span>
+        </div>
+        <div class="result-values">
+          <div class="result-val">Provided: <strong>${r.provided_value} ${r.gap_unit.split(' ')[0]}</strong></div>
+          <div class="result-val">Required: <strong>${r.required_value} ${r.gap_unit.split(' ')[0]}</strong></div>
+          <div class="result-val">Gap: <strong>${r.gap > 0 ? '+' : ''}${r.gap} ${r.gap_unit.split(' ')[0]}</strong></div>
+        </div>
+        ${r.status !== 'PASS' ? `<div class="result-fix">💡 ${r.fix_suggestion}</div>` : ''}
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+          <div class="result-source">${r.source_rule} · ${r.go_number}</div>
+          ${(()=>{ const m={'Setback':{p:38,t:'setback'},'Floor Area Ratio (FAR)':{p:5,t:'FAR'},'Ground Coverage':{p:155,t:'coverage'},'Building Height':{p:153,t:'height'},'Parking':{p:86,t:'parking'}}; const e=m[r.rule_name]; return e?`<button onclick="loadPdf('TNCDBR_2019_base.pdf',${e.p},'${e.t}')" class="btn-ghost" style="font-size:11px;padding:3px 8px">View Source → p.${e.p}</button>`:''; })()}
+        </div>
+      </div>`;
+    }).join('');
+
+    const bannerClass = statusClass;
+    document.getElementById('comp-results-container').innerHTML = `
+      <div class="results-area">
+        <div class="status-banner ${bannerClass}">
+          <div class="status-icon">${statusIcon}</div>
+          <div class="status-text">
+            <div class="status-label ${bannerClass}">Overall: ${data.overall_status}</div>
+            <div class="status-summary">${data.summary}</div>
+          </div>
+        </div>
+        ${cardsHtml}
+        <div class="disclaimer-strip"><strong>⚠ Advisory only.</strong> ${data.disclaimer}</div>
+      </div>`;
+    document.getElementById('comp-result-sub').textContent = `${results.length} rules checked · ${data.verified_date}`;
+    document.getElementById('pkg-btn').style.display = 'flex';
+
+    // ── Visualizations ────────────────────────────────────────
+    renderRadarChart(byName);
+    renderApprovalTimeline(data.overall_status);
+
+    // ── PDF viewer auto-trigger ───────────────────────────────
+    // 1. Prefer any result that carries an explicit source_pdf + page_number
+    const pdfResult = results.find(r => r.source_pdf && r.page_number);
+    if (pdfResult) {
+      loadPdfPage(pdfResult.source_pdf, pdfResult.page_number, pdfResult.rule_name);
+      return;
+    }
+    // 2. Fallback: map rule_name → best TNCDBR page (pre-verified)
+    const RULE_PAGE = {
+      'Setback': { page: 38, term: 'setback' },
+      'Floor Area Ratio (FAR)': { page: 5, term: 'FAR' },
+      'Ground Coverage': { page: 155, term: 'coverage' },
+      'Building Height': { page: 153, term: 'height' },
+      'Parking': { page: 86, term: 'parking' },
+    };
+    // Pick first FAIL, then first MARGINAL, then first result
+    const priority = results.find(r => r.status === 'FAIL')
+                  || results.find(r => r.status === 'MARGINAL')
+                  || results[0];
+    const mapping = RULE_PAGE[priority.rule_name];
+    if (mapping) {
+      loadPdfPage('TNCDBR_2019_base.pdf', mapping.page, mapping.term);
+    }
+  }
+
+  // ── PDF viewer ────────────────────────────────────────────────────────────
+
+  let pdfState = { filename: null, page: 1, total: 1, query: null };
+
+  async function loadPdfPage(filename, page, query) {
+    pdfState = { filename, page, total: pdfState.total, query };
+
+    const viewer = document.getElementById('pdf-viewer');
+    viewer.style.display = 'block';
+    document.getElementById('pdf-viewer-title').textContent = filename;
+    document.getElementById('pdf-viewer-subtitle').textContent = `Page ${page} — searching: ${query}`;
+    document.getElementById('pdf-page-indicator').textContent = `Page ${page} of ${pdfState.total}`;
+
+    const img = document.getElementById('pdf-page-img');
+    img.src = '';
+    img.alt = 'Loading...';
+    document.getElementById('pdf-excerpt').textContent = 'Loading…';
+
+    try {
+      const [imgRes, hlRes] = await Promise.all([
+        fetch(`${API}/api/pdf-page/${encodeURIComponent(filename)}/${page}`),
+        fetch(`${API}/api/pdf-highlight?filename=${encodeURIComponent(filename)}&page=${page}&query=${encodeURIComponent(query)}`),
+      ]);
+
+      const imgData = await imgRes.json();
+      pdfState.total = imgData.total_pages;
+      img.src = `data:image/png;base64,${imgData.image_base64}`;
+      img.alt = `${filename} — Page ${page}`;
+      document.getElementById('pdf-page-indicator').textContent =
+        `Page ${page} of ${imgData.total_pages}`;
+
+      const hlData = await hlRes.json();
+      const matchNote = hlData.matches > 0
+        ? `[${hlData.matches} match${hlData.matches > 1 ? 'es' : ''} for "${query}"]\n\n`
+        : `[no exact matches for "${query}" on this page]\n\n`;
+      document.getElementById('pdf-excerpt').textContent =
+        matchNote + (hlData.page_text || '').substring(0, 600) + (hlData.page_text && hlData.page_text.length > 600 ? '…' : '');
+
+    } catch(e) {
+      img.alt = 'Could not load PDF page';
+      document.getElementById('pdf-excerpt').textContent = 'Error loading page: ' + e.message;
+    }
+  }
+
+  function pdfNav(direction) {
+    const newPage = pdfState.page + direction;
+    if (newPage < 1 || newPage > pdfState.total) return;
+    pdfState.page = newPage;
+    loadPdfPage(pdfState.filename, newPage, pdfState.query);
+  }
+
+  // ── PDF.js Source Viewer ───────────────────────────────────────────────────
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  let pdfDoc = null;
+  let pdfCurrentPage = 1;
+  let pdfScale = 1.5;
+  let pdfCurrentFile = null;
+  let pdfSearchTerm = null;
+
+  async function loadPdf(filename, page, searchTerm) {
+    pdfCurrentFile = filename;
+    pdfCurrentPage = page || 1;
+    pdfSearchTerm = searchTerm;
+
+    const loadingEl = document.getElementById('pdf-loading');
+    loadingEl.textContent = 'Loading document...';
+    loadingEl.style.display = 'block';
+    document.getElementById('pdf-doc-title').textContent = filename;
+    document.getElementById('pdf-doc-sub').textContent = 'Loading…';
+
+    const url = `${API}/api/pdf/${encodeURIComponent(filename)}`;
+
+    try {
+      pdfDoc = await pdfjsLib.getDocument(url).promise;
+      loadingEl.style.display = 'none';
+      document.getElementById('pdf-doc-sub').textContent = `${pdfDoc.numPages} pages`;
+
+      if (searchTerm) {
+        document.getElementById('pdf-search-input').value = searchTerm;
+        const foundPage = await pdfFindPage(searchTerm);
+        if (foundPage) pdfCurrentPage = foundPage;
+      }
+
+      await pdfRenderPage(pdfCurrentPage);
+
+      // Switch to source-viewer tab
+      setPage('source-viewer', 'Source Viewer', 'Document Viewer',
+        'View original TNCDBR regulation pages with live search and text highlights.',
+        document.querySelector('[onclick*="source-viewer"]'));
+
+    } catch(e) {
+      loadingEl.textContent = 'Error loading PDF: ' + e.message;
+    }
+  }
+
+  async function pdfRenderPage(pageNum) {
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: pdfScale });
+
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    document.getElementById('pdf-page-info').textContent = `Page ${pageNum} of ${pdfDoc.numPages}`;
+    document.getElementById('pdf-zoom-level').textContent = Math.round(pdfScale * 100) + '%';
+    pdfCurrentPage = pageNum;
+
+    if (pdfSearchTerm) {
+      await pdfHighlightText(page, viewport, pdfSearchTerm);
+    } else {
+      document.getElementById('pdf-text-layer').innerHTML = '';
+    }
+  }
+
+  async function pdfHighlightText(page, viewport, searchTerm) {
+    const textContent = await page.getTextContent();
+    const textLayer = document.getElementById('pdf-text-layer');
+    textLayer.innerHTML = '';
+    textLayer.style.width = viewport.width + 'px';
+    textLayer.style.height = viewport.height + 'px';
+
+    const term = searchTerm.toLowerCase();
+
+    textContent.items.forEach(item => {
+      if (!item.str.toLowerCase().includes(term)) return;
+      const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+      const highlight = document.createElement('div');
+      highlight.style.cssText = `
+        position:absolute;
+        left:${tx[4]}px;
+        top:${viewport.height - tx[5] - item.height * pdfScale}px;
+        width:${item.width * pdfScale}px;
+        height:${item.height * pdfScale + 4}px;
+        background:rgba(255,220,0,0.4);
+        border-radius:2px;
+        pointer-events:none;
+      `;
+      textLayer.appendChild(highlight);
+    });
+  }
+
+  async function pdfFindPage(searchTerm) {
+    const term = searchTerm.toLowerCase();
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      const page = await pdfDoc.getPage(i);
+      const content = await page.getTextContent();
+      const text = content.items.map(item => item.str).join(' ').toLowerCase();
+      if (text.includes(term)) return i;
+    }
+    return null;
+  }
+
+  async function pdfSearch() {
+    const term = document.getElementById('pdf-search-input').value.trim();
+    if (!term || !pdfDoc) return;
+    pdfSearchTerm = term;
+    document.getElementById('pdf-loading').textContent = `Searching for "${term}"…`;
+    document.getElementById('pdf-loading').style.display = 'block';
+    const foundPage = await pdfFindPage(term);
+    document.getElementById('pdf-loading').style.display = 'none';
+    if (foundPage) {
+      await pdfRenderPage(foundPage);
+    } else {
+      alert(`"${term}" not found in this document`);
+    }
+  }
+
+  function pdfClearSearch() {
+    pdfSearchTerm = null;
+    document.getElementById('pdf-search-input').value = '';
+    document.getElementById('pdf-text-layer').innerHTML = '';
+    if (pdfDoc) pdfRenderPage(pdfCurrentPage);
+  }
+
+  async function pdfChangePage(delta) {
+    if (!pdfDoc) return;
+    const newPage = pdfCurrentPage + delta;
+    if (newPage < 1 || newPage > pdfDoc.numPages) return;
+    await pdfRenderPage(newPage);
+  }
+
+  async function pdfZoom(delta) {
+    pdfScale = Math.max(0.5, Math.min(3.0, pdfScale + delta));
+    if (pdfDoc) await pdfRenderPage(pdfCurrentPage);
+  }
+
+  async function downloadPackage() {
+    const btn = document.getElementById('pkg-btn');
+    btn.innerHTML = '<span class="spinner"></span> Building package...';
+    btn.disabled = true;
+
+    const payload = {
+      road_width_ft: parseInt(document.getElementById('c-road').value),
+      provided_front_m: parseFloat(document.getElementById('c-front').value),
+      provided_rear_m: parseFloat(document.getElementById('c-rear').value),
+      provided_side_m: parseFloat(document.getElementById('c-side').value),
+      plot_area_sqm: parseFloat(document.getElementById('c-plot').value),
+      proposed_builtup_sqm: parseFloat(document.getElementById('c-builtup').value),
+      footprint_sqm: parseFloat(document.getElementById('c-footprint').value),
+      proposed_height_m: parseFloat(document.getElementById('c-height').value),
+      floors: parseInt(document.getElementById('c-floors').value),
+      zone_type: document.getElementById('c-zone').value,
+      building_type: document.getElementById('c-btype').value,
+      proposed_spaces: 1,
+      num_units: 1,
+      authority: "CCMC",
+      plot_width_ft: 30,
+      plot_depth_ft: 40,
+      owner_name: "Owner"
+    };
+
+    try {
+      const res = await fetch(`${API}/api/generate-package`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error('Package generation failed');
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'BuildIQ_Submission_Package.zip';
+      a.click();
+      URL.revokeObjectURL(url);
+
+      btn.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Package Downloaded`;
+      btn.style.color = '#39FF82';
+    } catch(e) {
+      btn.innerHTML = '⚠️ Download failed — run compliance check first';
+      btn.style.color = '#FF6B6B';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function resetCompliance() {
+    document.getElementById('comp-results-container').innerHTML = `<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 4 12 14.01 9 11.01"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><div class="empty-title">No results yet</div><div class="empty-sub">Fill parameters and click Run Compliance Check</div></div>`;
+    ['cs-setback','cs-far','cs-cov','cs-ht'].forEach(id => { const el = document.getElementById(id); if(el){ el.textContent='—'; el.style.color=''; } });
+    ['cs-setback-sub','cs-far-sub','cs-cov-sub','cs-ht-sub'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent='Not checked yet'; });
+    document.getElementById('comp-result-sub').textContent = 'Fill form and run check';
+    document.getElementById('pdf-viewer').style.display = 'none';
+    document.getElementById('pkg-btn').style.display = 'none';
+    document.getElementById('radar-panel').style.display = 'none';
+    document.getElementById('timeline-panel').style.display = 'none';
+    if (radarChartInstance) { radarChartInstance.destroy(); radarChartInstance = null; }
+  }
+
+  // ─── Marketplace ────────────────────────────────────────────
+  async function loadArchitects() {
+    try {
+      const res = await fetch(`${API}/api/architects`, { credentials: 'include' });
+      if (!res.ok) return;
+      const architects = await res.json();
+
+      const container = document.getElementById('architect-list');
+      container.innerHTML = architects.map(a => `
+        <div class="project-item">
+          <div class="project-top">
+            <div>
+              <div class="project-name">${a.name}</div>
+              <div class="project-loc">${a.area} · TNCA ${a.tnca_reg}</div>
+            </div>
+            <span class="project-phase">₹999</span>
+          </div>
+          <div class="project-progress-row">
+            <span class="progress-label">${a.specialisation}</span>
+            <span class="progress-pct">${a.rating} ★</span>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <div class="assignee-chip"><div class="dot"></div>${a.submissions_count} submissions</div>
+            <div class="assignee-chip"><div class="dot"></div>Responds in ${a.response_hours}hr</div>
+          </div>
+        </div>
+      `).join('');
+
+      const sel = document.getElementById('mkt-arch');
+      sel.innerHTML = architects.map(a =>
+        `<option value="${a.id}">${a.name} — ${a.area}</option>`
+      ).join('');
+    } catch(e) {
+      // silently fail — static fallback already in HTML
+    }
+  }
+
+  async function requestSubmission() {
+    const pkg = document.getElementById('mkt-pkg').value;
+    if (pkg === 'no') {
+      setPage('compliance', 'Compliance Estimator', 'Quality Control',
+        'Run compliance check first to generate your package.',
+        document.querySelector('[onclick*=compliance]'));
+      return;
+    }
+
+    const name = document.getElementById('mkt-name').value.trim();
+    const phone = document.getElementById('mkt-phone').value.trim();
+    const archId = parseInt(document.getElementById('mkt-arch').value);
+
+    if (!name || !phone) {
+      alert('Please enter name and phone');
+      return;
+    }
+
+    const btn = document.getElementById('mkt-submit-btn');
+    btn.innerHTML = '<span class="spinner"></span> Sending request...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${API}/api/request-submission`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          owner_name: name,
+          owner_phone: phone,
+          architect_id: archId,
+          compliance_status: window.lastComplianceStatus || 'UNKNOWN',
+        }),
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+
+      btn.innerHTML = '✓ Request Sent';
+      btn.style.color = '#39FF82';
+      document.getElementById('mkt-confirm').innerHTML = `
+        <div style="padding:16px;background:rgba(57,255,130,0.08);border-radius:8px;
+          margin:12px 16px 16px;border:0.5px solid rgba(57,255,130,0.2)">
+          <div style="font-size:13px;font-weight:500;color:#39FF82;margin-bottom:6px">
+            Request #${data.submission_id} confirmed
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary)">
+            ${data.architect_name} will contact you at ${phone} within
+            ${data.response_hours} hours. Total: ₹999.
+          </div>
+        </div>`;
+    } catch(e) {
+      btn.innerHTML = '⚠️ Try again';
+      btn.disabled = false;
+    }
+  }
+
+  // ─── Rules ──────────────────────────────────────────────────
+  const RULE_KB = {
+    'setback 20ft': { answer: 'For a non-high-rise residential building on a 20-foot road, the minimum required setbacks are: Front — 3.0 metres, Rear — 1.5 metres, Side — 1.5 metres. These are mandatory minimums under TNCDBR 2019. Any setback less than these values will cause an automatic FAIL in eDCR scrutiny.', rule_id: 'TNCDBR-R9-T1', go_number: 'G.O.Ms.No.18, MA&WS, 04-02-2019', confidence: 'HIGH', verified: '2026-03-20' },
+    'far residential': { answer: 'The permitted Floor Space Index (FSI) / FAR for Residential R1 zone under TNCDBR 2019 is 1.5. For Residential R2, it is 1.75. This means the total built-up area across all floors cannot exceed 1.5 times (or 1.75 times) the plot area. Example: For a 120 sq.m plot in R1 zone, maximum permissible built-up area is 120 × 1.5 = 180 sq.m across all floors.', rule_id: 'TNCDBR-R9-T2', go_number: 'G.O.Ms.No.18, MA&WS, 04-02-2019', confidence: 'HIGH', verified: '2026-03-20' },
+    'height 2024': { answer: 'The March 2024 amendment (G.O.Ms.No.70) raised the maximum permissible height for non-high-rise structures to 14 metres. Previously this was lower. If your plan was designed before this date, you may now have additional height allowance. Buildings exceeding 14 metres are classified as high-rise and require additional clearances from Fire and Rescue Services.', rule_id: 'TNCDBR-R9-HT', go_number: 'G.O.Ms.No.70, HUD, 11-03-2024', confidence: 'HIGH', verified: '2026-03-20' },
+    'rainwater': { answer: 'Rainwater harvesting is mandatory for all buildings with a plot area of 300 sq.m and above. For residential buildings, a sump of minimum capacity must be provided. The TNCDBR 2019 specifies design standards for the collection system. Failure to include this in your drawings will cause rejection during eDCR scrutiny for qualifying plot sizes.', rule_id: 'TNCDBR-R15', go_number: 'G.O.Ms.No.18, MA&WS, 04-02-2019', confidence: 'MEDIUM', verified: '2026-03-20' },
+    'parking': { answer: 'For residential buildings, TNCDBR 2019 requires 1 parking space per dwelling unit. For commercial buildings, 2 spaces per 100 sq.m of floor area is required. Parking spaces must be a minimum of 2.5m × 5m each. If your ground floor footprint does not accommodate the required parking, your plan will fail eDCR scrutiny.', rule_id: 'TNCDBR-R12', go_number: 'G.O.Ms.No.18, MA&WS, 04-02-2019', confidence: 'HIGH', verified: '2026-03-20' },
+  };
+
+  function fillQuestion(q) { document.getElementById('r-question').value = q; askRule(); }
+
+  async function askRule() {
+    const q = document.getElementById('r-question').value.trim();
+    const jurisdiction = document.getElementById('r-jurisdiction').value;
+    if (!q) return;
+    document.getElementById('rule-answer-container').innerHTML = '<div class="loading-state"><span class="spinner"></span> Searching TNCDBR 2019...</div>';
+    document.getElementById('rule-answer-meta').textContent = 'Processing...';
+
+    // Try API first, fall back to local KB
+    try {
+      const res = await fetch(`${API}/api/explain-rule`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ question: q, jurisdiction, language: currentLang }) });
+      if (res.ok) {
+        const data = await res.json();
+        renderRuleAnswer(data, q, jurisdiction);
+        return;
+      }
+    } catch(e) {}
+
+    // Local KB fallback
+    await new Promise(r => setTimeout(r, 600));
+    const qLow = q.toLowerCase();
+    let matched = null;
+    if (qLow.includes('setback') || qLow.includes('20ft') || qLow.includes('20 ft')) matched = RULE_KB['setback 20ft'];
+    else if (qLow.includes('far') || qLow.includes('fsi') || qLow.includes('floor space')) matched = RULE_KB['far residential'];
+    else if (qLow.includes('height') || qLow.includes('2024') || qLow.includes('14m')) matched = RULE_KB['height 2024'];
+    else if (qLow.includes('rainwater') || qLow.includes('harvesting')) matched = RULE_KB['rainwater'];
+    else if (qLow.includes('parking')) matched = RULE_KB['parking'];
+
+    if (matched) {
+      renderRuleAnswer(matched, q, jurisdiction);
+    } else {
+      document.getElementById('rule-answer-container').innerHTML = `<div class="rule-qa"><div class="rule-answer-box"><div class="rule-answer-text" style="color:var(--text-secondary)">This specific question requires verification with the relevant authority. I cannot confirm this from the available rules.<br><br>Please connect the RAG backend (POST /api/explain-rule) or rephrase your question using keywords like setback, FAR, height, parking, or rainwater.</div></div><div class="disclaimer-strip"><strong>⚠ Note:</strong> Full rule Q&A requires the backend server running at ${API}.</div></div>`;
+      document.getElementById('rule-answer-meta').textContent = 'No match in local knowledge base';
+    }
+  }
+
+  function renderRuleAnswer(data, q, jurisdiction) {
+    const answer    = typeof data === 'string' ? data : (data.answer || '');
+    const ruleId    = typeof data === 'object' ? (data.rule_id || 'TNCDBR 2019') : 'TNCDBR 2019';
+    const goNum     = typeof data === 'object' ? (data.go_number || '—') : '—';
+    const conf      = typeof data === 'object' ? (data.confidence || 'MEDIUM') : 'MEDIUM';
+    const confClass = conf === 'HIGH' ? 'conf-high' : conf === 'MEDIUM' ? 'conf-medium' : 'conf-low';
+    const verified  = typeof data === 'object' ? (data.verified || data.verified_date || '2026-03-20') : '2026-03-20';
+    const citations = (typeof data === 'object' && Array.isArray(data.citations)) ? data.citations : [];
+    const sources   = (typeof data === 'object' && Array.isArray(data.sources))   ? data.sources   : [];
+
+    // Citation chips — clickable if RAG returned chunk_id, static otherwise
+    let citationHtml = '';
+    if (citations.length > 0) {
+      citationHtml = citations.map(c =>
+        `<button onclick="openCitation('${c.chunk_id}','${c.rule_id}','${c.go_number}',${c.page_number})"
+          style="font-size:10.5px;font-family:'DM Mono',monospace;color:var(--accent);
+          background:var(--accent-dim);border:1px solid var(--accent-dim);border-radius:4px;
+          padding:3px 10px;cursor:pointer;transition:all 0.2s;"
+          title="${c.preview || ''}">
+          📄 ${c.rule_id} · Page ${c.page_number}
+        </button>`
+      ).join('');
+    } else {
+      citationHtml = `<span class="rule-cite-chip">${ruleId}</span>
+                      <span class="rule-cite-chip">${goNum}</span>
+                      <span class="rule-cite-chip">Verified ${verified}</span>`;
+    }
+
+    // Source cards with "View Page →" for PDF sources
+    let sourcesHtml = '';
+    if (sources.length > 0) {
+      sourcesHtml = `<div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em">Sources</div>
+        ${sources.map(src => `
+          <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:10.5px;font-family:'DM Mono',monospace;color:var(--accent);margin-bottom:4px;">
+                📄 ${src.source}${src.page_number != null ? ' · p.' + src.page_number : ''}
+                <span style="margin-left:6px;padding:1px 6px;background:var(--bg-3);border-radius:3px;font-size:9.5px;color:var(--text-secondary)">${src.chunk_type}</span>
+              </div>
+              <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${src.text}</div>
+            </div>
+            ${src.chunk_type === 'pdf' && src.page_number != null
+              ? `<button onclick="loadPdfPage('${src.source}', ${src.page_number}, ${JSON.stringify(q)})"
+                   class="btn-ghost" style="font-size:12px;padding:4px 10px;white-space:nowrap;flex-shrink:0">
+                   View Page ${src.page_number} →
+                 </button>`
+              : ''}
+          </div>`).join('')}
+      </div>`;
+    }
+
+    document.getElementById('rule-answer-container').innerHTML = `
+      <div class="rule-qa">
+        <div class="rule-answer-box">
+          <div class="rule-answer-text">${answer}</div>
+          <div class="rule-citation" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            ${citationHtml}
+            <span class="confidence-badge ${confClass}">${conf} confidence</span>
+          </div>
+          ${sourcesHtml}
+        </div>
+        <div class="disclaimer-strip">
+          <strong>⚠ Advisory only.</strong> Verify with a licensed architect before making design decisions.
+          Rules may have local variations not captured here.
+        </div>
+      </div>`;
+    document.getElementById('rule-answer-meta').textContent = `${jurisdiction} · ${q.substring(0,50)}${q.length>50?'…':''}`;
+  }
+
+  // ─── Citation modal ──────────────────────────────────────────
+  async function openCitation(chunkId, ruleId, goNumber, pageNum) {
+    try {
+      const res = await fetch(`${API}/api/citation/${chunkId}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      document.getElementById('citation-modal-title').textContent =
+        `${ruleId} — Page ${pageNum}`;
+
+      const text = data.text || '';
+      document.getElementById('citation-text-display').innerHTML =
+        `<span style="background:rgba(41,121,255,0.2);border-radius:3px;padding:1px 3px;">${text}</span>`;
+
+      document.getElementById('citation-meta').innerHTML = `
+        <span style="font-size:10.5px;font-family:'DM Mono',monospace;color:var(--text-tertiary);background:var(--bg-3);border-radius:4px;padding:3px 8px;">${data.rule_id}</span>
+        <span style="font-size:10.5px;font-family:'DM Mono',monospace;color:var(--text-tertiary);background:var(--bg-3);border-radius:4px;padding:3px 8px;">${data.go_number}</span>
+        <span style="font-size:10.5px;font-family:'DM Mono',monospace;color:var(--text-tertiary);background:var(--bg-3);border-radius:4px;padding:3px 8px;">Verified ${data.verified_date}</span>
+        <span style="font-size:10.5px;font-family:'DM Mono',monospace;color:var(--text-tertiary);background:var(--bg-3);border-radius:4px;padding:3px 8px;">Page ${pageNum}</span>`;
+
+      const modal = document.getElementById('citation-modal');
+      modal.style.display = 'flex';
+    } catch(e) {
+      alert('Could not load citation. Make sure backend is running.');
+    }
+  }
+
+  function closeCitationModal() {
+    document.getElementById('citation-modal').style.display = 'none';
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('citation-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeCitationModal();
+  });
+
+  // ─── Fees ───────────────────────────────────────────────────
+  async function runFee() {
+    const authority = document.getElementById('f-authority').value;
+    const btype = document.getElementById('f-btype').value;
+    const area = parseFloat(document.getElementById('f-area').value);
+    try {
+      const res = await fetch(`${API}/api/fee-estimate`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ authority, building_type: btype, builtup_area_sqm: area }) });
+      const data = await res.json();
+      renderFeeResult(data, area, authority);
+    } catch(e) {
+      // Fallback calculation
+      const scrutiny = area <= 150 ? 750 : area <= 300 ? 1500 : 3000;
+      const permit = Math.round(area * 45);
+      const devcharges = Math.round(area * 120);
+      const total = scrutiny + permit + devcharges;
+      renderFeeResult({ authority, builtup_area_sqm: area, government_fees: { scrutiny_fee_rs: scrutiny, permit_fee_rs: permit, development_charges_rs: devcharges, total_rs: total }, agency_fee_benchmark: { min_rs: 15000, max_rs: 40000, note: 'Market rate for Coimbatore agencies. Above ₹50,000 — seek second opinion.' }, disclaimer: 'Fee estimates are approximate. Verify current rates with CCMC/DTCP.' }, area, authority);
+    }
+  }
+
+  function renderFeeResult(data, area, authority) {
+    const gf = data.government_fees;
+    const ab = data.agency_fee_benchmark;
+    const fmt = n => '₹' + Number(n).toLocaleString('en-IN');
+    document.getElementById('fee-result-container').innerHTML = `
+      <div class="fee-table">
+        <div class="fee-row"><span class="fee-label">Scrutiny Fee</span><span class="fee-amount">${fmt(gf.scrutiny_fee_rs)}</span></div>
+        <div class="fee-row"><span class="fee-label">Building Permit Fee</span><span class="fee-amount">${fmt(gf.permit_fee_rs)}</span></div>
+        <div class="fee-row"><span class="fee-label">Development Charges</span><span class="fee-amount">${fmt(gf.development_charges_rs)}</span></div>
+        <div class="fee-row total"><span class="fee-label total-label">Total Government Fee</span><span class="fee-amount total-amount">${fmt(gf.total_rs)}</span></div>
+      </div>
+      <div class="fee-benchmark">
+        <div class="fee-benchmark-title">Agency Fee Benchmark</div>
+        <div class="fee-benchmark-value">${fmt(ab.min_rs)} – ${fmt(ab.max_rs)}</div>
+        <div class="fee-benchmark-note">${ab.note}</div>
+      </div>
+      <div class="disclaimer-strip"><strong>⚠ Estimates only.</strong> ${data.disclaimer}</div>`;
+    document.getElementById('fee-result-sub').textContent = `${authority} · ${area} sq.m · ${data.government_fees ? 'Placeholder rates' : ''}`;
+  }
+
+  // ─── Document checklist toggle ──────────────────────────────
+  function toggleDoc(el) {
+    const badge = el.querySelector('.doc-status');
+    if (badge.classList.contains('ds-approved')) {
+      badge.classList.replace('ds-approved','ds-rejected');
+      badge.textContent = '✗ Missing';
+    } else if (badge.classList.contains('ds-rejected')) {
+      badge.classList.replace('ds-rejected','ds-approved');
+      badge.textContent = '✓ Have it';
+    } else if (badge.classList.contains('ds-missing')) {
+      badge.classList.replace('ds-missing','ds-approved');
+      badge.textContent = '✓ Verified';
+    }
+  }
+
+  // ─── Language toggle ─────────────────────────────────────────
+  function toggleLanguage() {
+    currentLang = currentLang === 'en' ? 'ta' : 'en';
+    const btn = document.getElementById('lang-toggle-btn');
+    if (btn) btn.textContent = currentLang === 'en' ? '🌐 Switch to Tamil' : '🌐 Switch to English';
+  }
+
+  // ─── CTA button ──────────────────────────────────────────────
+  function handleCTA() {
+    const page = document.body.getAttribute('data-page');
+    if (page === 'compliance') runCompliance();
+    else if (page === 'fees') runFee();
+    else if (page === 'rules') askRule();
+    else runJurisdiction();
+  }
+
+  // ─── Init ─────────────────────────────────────────────────────
+  document.querySelector('.nav-item').classList.add('active');
+</script>
+</body>
+</html>
