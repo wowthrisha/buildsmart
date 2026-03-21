@@ -708,6 +708,36 @@ def demo_check(request: Request, body: ComplianceRequest):
     return result
 
 
+# ── Route 15: Demo explain-rule — no auth, for Owner ask page ────────────────
+
+@app.post("/api/demo-explain", tags=["ai"])
+@limiter.limit("30/hour")
+def demo_explain(request: Request, body: ExplainRuleRequest):
+    """RAG Q&A without auth. For Owner ask page."""
+    if not ANTHROPIC_API_KEY:
+        return {
+            "answer": "AI Q&A is not configured. Please add a valid ANTHROPIC_API_KEY to .env.",
+            "citations": [],
+            "confidence": "LOW",
+            "rag_found": False,
+        }
+    try:
+        result = answer_rule_question(
+            question=body.question,
+            jurisdiction=body.jurisdiction,
+            language=body.language,
+        )
+        return result
+    except Exception as e:
+        return {
+            "answer": "AI service temporarily unavailable. Please try again.",
+            "citations": [],
+            "confidence": "LOW",
+            "rag_found": False,
+            "disclaimer": str(e)[:200],
+        }
+
+
 if __name__ == "__main__":
     import uvicorn
     from backend.config import DEBUG

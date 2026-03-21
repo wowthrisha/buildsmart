@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Ask a Question — BuildSmart{% endblock %}
+{% block breadcrumb %}Ask a Question{% endblock %}
+{% block page_class %}page-owner{% endblock %}
+
+{% block extra_css %}
+<style>
+  .suggested-q {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(41,121,255,0.2);
+    background: rgba(41,121,255,0.06);
+    color: #2979FF;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .suggested-q:hover {
+    background: rgba(41,121,255,0.15);
+    border-color: rgba(41,121,255,0.4);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="page-header">
+  <div class="page-title-group">
+    <div class="page-eyebrow">Owner Q&amp;A</div>
+    <h1 class="page-title">Ask a Question</h1>
+    <p class="page-subtitle">
+      Type in Tamil or English — every answer cites the exact TNCDBR 2019 rule.
+      <br><span style="color:#555">தமிழிலோ ஆங்கிலத்திலோ கேளுங்கள்</span>
+    </p>
+  </div>
+</div>
+
+<!-- Info strip -->
+<div style="background:rgba(41,121,255,0.06);border:1px solid rgba(41,121,255,0.15);border-radius:14px;padding:20px 24px;display:flex;gap:24px;flex-wrap:wrap;">
+  <div style="flex:1;min-width:200px">
+    <div style="font-size:11px;color:#2979FF;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Source</div>
+    <div style="font-size:13px;color:#f0f0f0">TNCDBR 2019 — 338 rule chunks</div>
+  </div>
+  <div style="flex:1;min-width:200px">
+    <div style="font-size:11px;color:#2979FF;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Languages</div>
+    <div style="font-size:13px;color:#f0f0f0">English &amp; தமிழ் (auto-detected)</div>
+  </div>
+  <div style="flex:1;min-width:200px">
+    <div style="font-size:11px;color:#2979FF;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Powered by</div>
+    <div style="font-size:13px;color:#f0f0f0">Claude Haiku + BM25 RAG</div>
+  </div>
+</div>
+
+<!-- Suggested questions -->
+<div>
+  <div style="font-size:11px;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Common questions</div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
+    {% for q in [
+      'What is setback and why does it matter?',
+      'How many floors can I build on my plot?',
+      'What is FAR?',
+      'Do I need an architect?',
+      'What documents do I need for CCMC approval?',
+      'இடைவெளி என்றால் என்ன?',
+      'எனது மனைக்கு எத்தனை மாடி கட்டலாம்?',
+      'FSI என்றால் என்ன?'
+    ] %}
+    <button class="suggested-q" onclick="fillAndAsk('{{ q }}')">{{ q }}</button>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Ask box -->
+<div style="background:#080808;border:1px solid rgba(41,121,255,0.2);border-radius:12px;padding:20px">
+  <textarea id="ask-input" rows="3" style="width:100%;background:transparent;border:none;outline:none;color:#f0f0f0;font-size:15px;resize:none;font-family:'DM Sans',sans-serif;line-height:1.6" placeholder="Type your question in Tamil or English...
+தமிழிலோ ஆங்கிலத்திலோ கேளுங்கள்..."></textarea>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)">
+    <span style="font-size:11px;color:#444">Answer cites exact TNCDBR rule · தமிழ் auto-detected</span>
+    <button onclick="askNow()" id="ask-btn" style="padding:9px 24px;background:#2979FF;color:#000;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;box-shadow:0 0 16px rgba(41,121,255,0.3);transition:all 0.2s">
+      Ask / கேளு
+    </button>
+  </div>
+</div>
+
+<!-- Answer area -->
+<div id="answer-area" style="display:none">
+  <div id="answer-loading" style="display:none;padding:24px;text-align:center;background:#080808;border:1px solid rgba(41,121,255,0.15);border-radius:12px">
+    <div style="width:28px;height:28px;border:2px solid rgba(41,121,255,0.2);border-top-color:#2979FF;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px"></div>
+    <div style="color:#2979FF;font-size:13px">Thinking... / சிந்திக்கிறேன்...</div>
+  </div>
+  <div id="answer-content" style="display:none;background:#080808;border:1px solid rgba(41,121,255,0.2);border-radius:12px;padding:24px">
+    <div id="answer-text" style="font-size:14px;line-height:1.8;color:#f0f0f0;white-space:pre-wrap"></div>
+    <div id="answer-source" style="font-size:11px;color:#2979FF;margin-top:14px;padding-top:14px;border-top:1px solid rgba(41,121,255,0.15)"></div>
+  </div>
+</div>
+
+<!-- History -->
+<div id="history-section" style="display:none">
+  <div style="font-size:11px;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Previous answers</div>
+  <div id="history-list"></div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const BUILDIQ = '{{ buildiq_url }}';
+const answerHistory = [];
+
+function fillAndAsk(q) {
+  document.getElementById('ask-input').value = q;
+  askNow();
+}
+
+async function askNow() {
+  const q = document.getElementById('ask-input').value.trim();
+  if (!q) return;
+
+  const btn = document.getElementById('ask-btn');
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  document.getElementById('answer-area').style.display = 'block';
+  document.getElementById('answer-loading').style.display = 'block';
+  document.getElementById('answer-content').style.display = 'none';
+
+  const isTamil = /[\u0B80-\u0BFF]/.test(q);
+
+  try {
+    const r = await fetch(`${BUILDIQ}/api/demo-explain`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question: q, language: isTamil ? 'ta' : 'en'})
+    });
+    const d = await r.json();
+    const ans = d.answer || d.response || d.explanation || 'No answer found.';
+    const citations = d.citations || d.sources || [];
+
+    const sourceText = citations.length
+      ? 'Source: ' + citations.map(c => c.source || c.rule_id || 'TNCDBR 2019').join(', ')
+      : 'Source: TNCDBR 2019';
+
+    document.getElementById('answer-loading').style.display = 'none';
+    document.getElementById('answer-content').style.display = 'block';
+    document.getElementById('answer-text').textContent = ans;
+    document.getElementById('answer-source').textContent = sourceText;
+
+    answerHistory.unshift({q, ans, src: sourceText});
+    renderHistory();
+  } catch(e) {
+    document.getElementById('answer-loading').style.display = 'none';
+    document.getElementById('answer-content').style.display = 'block';
+    document.getElementById('answer-text').textContent =
+      'Could not connect to BuildIQ. Make sure FastAPI is running on port 8000.';
+    document.getElementById('answer-source').textContent = '';
+  }
+
+  btn.textContent = 'Ask / கேளு';
+  btn.disabled = false;
+}
+
+function renderHistory() {
+  if (answerHistory.length === 0) return;
+  document.getElementById('history-section').style.display = 'block';
+  document.getElementById('history-list').innerHTML = answerHistory.slice(0, 5).map(h => `
+    <div style="border:1px solid rgba(41,121,255,0.1);border-radius:10px;padding:16px;margin-bottom:10px;background:#080808">
+      <div style="font-size:12px;color:#2979FF;margin-bottom:8px;font-weight:500">${h.q}</div>
+      <div style="font-size:13px;color:#888;line-height:1.6">
+        ${h.ans.substring(0,240)}${h.ans.length > 240 ? '...' : ''}
+      </div>
+      <div style="font-size:11px;color:#444;margin-top:8px">${h.src}</div>
+    </div>`).join('');
+}
+
+// Submit on Ctrl+Enter
+document.getElementById('ask-input').addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') askNow();
+});
+</script>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}My Documents — BuildSmart{% endblock %}
+{% block breadcrumb %}My Documents{% endblock %}
+{% block page_class %}page-owner{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-title-group">
+    <div class="page-eyebrow">Owner Vault</div>
+    <h1 class="page-title">My Documents</h1>
+    <p class="page-subtitle">
+      Uploaded sketches and plans · எனது பதிவேற்றிய வரைபடங்கள்
+    </p>
+  </div>
+  <div style="margin-top:4px">
+    <a href="{{ url_for('owner.owner_home') }}" style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;background:#2979FF;color:#000;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 0 16px rgba(41,121,255,0.3)">
+      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#000;fill:none;stroke-width:2;stroke-linecap:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Upload new sketch
+    </a>
+  </div>
+</div>
+
+{% if docs %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+  {% for doc in docs %}
+  <div style="background:#080808;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(41,121,255,0.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'">
+    <div style="display:flex;align-items:flex-start;gap:14px">
+      <div style="width:40px;height:40px;background:rgba(41,121,255,0.1);border-radius:10px;display:grid;place-items:center;flex-shrink:0;border:1px solid rgba(41,121,255,0.2)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#2979FF;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          {{ doc.file_path.split('/')[-1] if doc.file_path else 'Unnamed file' }}
+        </div>
+        <div style="font-size:11px;color:#555;margin-top:3px">
+          Uploaded {{ doc.uploaded_at.strftime('%d %b %Y') if doc.uploaded_at else '—' }}
+        </div>
+        {% if doc.change_notes %}
+        <div style="font-size:12px;color:#666;margin-top:6px;line-height:1.5">{{ doc.change_notes[:80] }}{% if doc.change_notes|length > 80 %}...{% endif %}</div>
+        {% endif %}
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <a href="{{ url_for('owner.owner_home') }}" style="flex:1;text-align:center;padding:8px;border-radius:7px;background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.2);color:#2979FF;font-size:12px;text-decoration:none;transition:all 0.15s" onmouseover="this.style.background='rgba(41,121,255,0.2)'" onmouseout="this.style.background='rgba(41,121,255,0.1)'">
+        Run compliance check
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<!-- Empty state -->
+<div style="text-align:center;padding:80px 20px">
+  <div style="width:64px;height:64px;background:rgba(41,121,255,0.08);border-radius:16px;display:grid;place-items:center;margin:0 auto 20px;border:1px solid rgba(41,121,255,0.15)">
+    <svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#2979FF;fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+  </div>
+  <div style="font-size:18px;font-weight:400;color:#f0f0f0;margin-bottom:8px">No documents yet</div>
+  <div style="font-size:13px;color:#555;margin-bottom:8px">வரைபடங்கள் எதுவும் இல்லை</div>
+  <div style="font-size:13px;color:#666;margin-bottom:28px;max-width:340px;margin-left:auto;margin-right:auto;line-height:1.6">
+    Upload your building sketch on the compliance check page and run an AI analysis — it will appear here automatically.
+  </div>
+  <a href="{{ url_for('owner.owner_home') }}" style="display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:8px;background:#2979FF;color:#000;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 0 16px rgba(41,121,255,0.3)">
+    <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#000;fill:none;stroke-width:2;stroke-linecap:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Upload a sketch
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
