@@ -463,11 +463,19 @@
 
     <div class="pin-grid">
       {% if not pins %}
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
-        <div class="empty-title">No pins yet</div>
-        <p style="font-size:13px;color:#333">Paste a URL or upload an image to start building the board.</p>
-      </div>
+        {% if active_tag %}
+        <div class="empty-state" style="grid-column:1/-1">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <div class="empty-title">No pins tagged "{{ active_tag }}"</div>
+          <p style="font-size:13px;color:#333">Try a different tag or <a href="{{ url_for('ref.board', project_id=project.id) }}" style="color:#BF5FFF;text-decoration:none">clear the filter</a> to see all pins.</p>
+        </div>
+        {% else %}
+        <div class="empty-state" style="grid-column:1/-1">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+          <div class="empty-title">No pins yet</div>
+          <p style="font-size:13px;color:#333">Paste a URL or upload an image above to start building the design board.</p>
+        </div>
+        {% endif %}
       {% endif %}
 
       {% for pin in pins %}

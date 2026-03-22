@@ -16,15 +16,28 @@ mom_bp = Blueprint('mom', __name__)
 VALID_STATES = {'Decided', 'Pending', 'Deferred'}
 
 
+def read_last_compliance():
+    """
+    Safely read instance/last_compliance.json.
+    Returns parsed dict or None — never raises.
+    """
+    path = os.path.join(os.path.dirname(__file__), '..', 'instance', 'last_compliance.json')
+    path = os.path.abspath(path)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, 'r') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError, OSError):
+        return None
+
+
 def _fetch_compliance_snapshot():
     """Pull latest compliance check. Prefers owner's saved payload, falls back to API call."""
     # 1) Try the payload saved by the owner via /owner/save-compliance
     try:
-        saved_path = os.path.join(os.path.dirname(__file__), '..', 'instance', 'last_compliance.json')
-        saved_path = os.path.abspath(saved_path)
-        if os.path.exists(saved_path):
-            with open(saved_path) as f:
-                d = json.load(f)
+        d = read_last_compliance()
+        if d:
             results = d.get('results', {})
             if results:
                 scores = [

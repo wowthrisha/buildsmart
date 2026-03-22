@@ -219,6 +219,52 @@ def _seed_demo_data(app):
                 order=i, added_by=arch.id
             ))
 
+        from models.reference_board import ReferencePin
+        pins = [
+            dict(
+                project_id=p.id,
+                added_by=arch.id,
+                source_url='https://www.pinterest.com/pin/courtyard-house-design',
+                image_url='https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600',
+                title='Courtyard House — Vastu-compliant layout',
+                site_name='Pinterest',
+                design_tags='courtyard,vastu,natural-light',
+                arch_note='Good reference for central courtyard placement in G+1 residential.',
+            ),
+            dict(
+                project_id=p.id,
+                added_by=arch.id,
+                source_url='https://www.archdaily.com/setback-design-tropical',
+                image_url='https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600',
+                title='Tropical setback design — TNCDBR compliant',
+                site_name='ArchDaily',
+                design_tags='setback,tropical,ventilation',
+                arch_note='Front setback 3.5m matches CCMC requirement; side openings improve cross-ventilation.',
+            ),
+            dict(
+                project_id=p.id,
+                added_by=arch.id,
+                source_url='https://www.houzz.com/photos/compact-parking-layout',
+                image_url='https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600',
+                title='Compact 2-car parking within plot',
+                site_name='Houzz',
+                design_tags='parking,compact,layout',
+                arch_note='Fits 2 spaces in 2.5×5m each — meets R1 zone parking norm.',
+            ),
+            dict(
+                project_id=p.id,
+                added_by=arch.id,
+                source_url='https://www.archdaily.com/low-cost-rcc-slab',
+                image_url='https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600',
+                title='Low-cost RCC slab for G+1',
+                site_name='ArchDaily',
+                design_tags='structure,rcc,cost',
+                arch_note='230mm slab with M20 concrete; suitable for 7m height cap.',
+            ),
+        ]
+        for pin_data in pins:
+            db.session.add(ReferencePin(**pin_data))
+
         try:
             db.session.commit()
             print('Demo data seeded successfully')
