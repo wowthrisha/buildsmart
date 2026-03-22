@@ -199,8 +199,33 @@
       <footer class="auth-footer">
         Unidentified user? <a href="{{ url_for('auth.register') }}">Create an account</a>
       </footer>
+
+      <!-- Demo Quick Login -->
+      <div style="margin-top:28px;padding:18px;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.08);border-radius:12px">
+        <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px">Quick Demo Login</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button onclick="quickLogin('architect@test.com','test123')"
+            style="padding:10px;background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.25);border-radius:8px;color:#2979FF;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s"
+            onmouseover="this.style.background='rgba(41,121,255,0.18)'" onmouseout="this.style.background='rgba(41,121,255,0.1)'">
+            ⬡ Architect
+          </button>
+          <button onclick="quickLogin('owner@demo.com','test123')"
+            style="padding:10px;background:rgba(255,214,0,0.08);border:1px solid rgba(255,214,0,0.2);border-radius:8px;color:#FFD600;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s"
+            onmouseover="this.style.background='rgba(255,214,0,0.16)'" onmouseout="this.style.background='rgba(255,214,0,0.08)'">
+            ◈ Owner
+          </button>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:#333;text-align:center">password: test123</div>
+      </div>
     </div>
   </div>
 
+<script>
+function quickLogin(email, password) {
+  document.querySelector('input[name="email"]').value = email;
+  document.querySelector('input[name="password"]').value = password;
+  document.querySelector('form').submit();
+}
+</script>
 </body>
 </html>
