@@ -1,0 +1,589 @@
+{% extends "base.html" %}
+
+{% block title %}Reference Board — {{ project.name }}{% endblock %}
+{% block breadcrumb %}Reference Board{% endblock %}
+{% block page_class %}page-reference{% endblock %}
+
+{% block extra_css %}
+:root {
+  --pur: #BF5FFF;
+  --pur-dim: rgba(191,95,255,0.12);
+  --pur-subtle: rgba(191,95,255,0.06);
+  --pur-border: rgba(191,95,255,0.2);
+  --pur-glow: rgba(191,95,255,0.35);
+}
+
+.board-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── Filter Sidebar ───────── */
+.filter-sidebar {
+  background: #080808;
+  border: 1px solid rgba(191,95,255,0.15);
+  border-radius: 16px;
+  padding: 20px 16px;
+  position: sticky;
+  top: 0;
+}
+
+.filter-title {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: #BF5FFF;
+  margin-bottom: 14px;
+}
+
+.filter-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #888;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  margin-bottom: 2px;
+}
+
+.filter-tag:hover { background: var(--pur-subtle); color: #f0f0f0; }
+.filter-tag.active { background: var(--pur-dim); color: #BF5FFF; }
+
+.filter-tag-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(191,95,255,0.4);
+  flex-shrink: 0;
+}
+
+.filter-tag.active .filter-tag-dot { background: #BF5FFF; box-shadow: 0 0 6px var(--pur-glow); }
+
+.filter-divider { border: none; border-top: 1px solid rgba(191,95,255,0.1); margin: 14px 0; }
+
+/* ── Upload Panel ───────── */
+.upload-panel {
+  background: var(--pur-subtle);
+  border: 1px dashed rgba(191,95,255,0.25);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.upload-label {
+  font-size: 10px;
+  color: #BF5FFF;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.upload-input {
+  background: rgba(191,95,255,0.06);
+  border: 1px solid rgba(191,95,255,0.2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #f0f0f0;
+  font-size: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+  font-family: inherit;
+}
+
+.upload-input:focus {
+  outline: none;
+  border-color: #BF5FFF;
+  box-shadow: 0 0 0 3px rgba(191,95,255,0.1);
+}
+
+.upload-btn {
+  background: #BF5FFF;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.upload-btn:hover { filter: brightness(1.1); }
+
+/* ── Pin Grid ───────── */
+.pin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.pin-card {
+  background: #080808;
+  border: 1px solid rgba(191,95,255,0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+}
+
+.pin-card:hover {
+  border-color: rgba(191,95,255,0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(191,95,255,0.12);
+}
+
+.pin-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  display: block;
+  background: #111;
+}
+
+.pin-img-placeholder {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: rgba(191,95,255,0.05);
+  display: grid;
+  place-items: center;
+}
+
+.pin-img-placeholder svg {
+  width: 32px; height: 32px;
+  stroke: rgba(191,95,255,0.3);
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.pin-body { padding: 12px 14px 14px; }
+
+.pin-source {
+  font-size: 9.5px;
+  color: #BF5FFF;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.pin-title {
+  font-size: 13px;
+  color: #f0f0f0;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 8px;
+}
+
+.pin-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.pin-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: rgba(191,95,255,0.1);
+  color: #BF5FFF;
+  border-radius: 20px;
+  border: 1px solid rgba(191,95,255,0.2);
+}
+
+.pin-note {
+  font-size: 11.5px;
+  color: #666;
+  line-height: 1.5;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.pin-actions {
+  display: flex;
+  gap: 6px;
+  padding: 0 14px 12px;
+}
+
+.pin-btn {
+  flex: 1;
+  background: rgba(191,95,255,0.08);
+  border: 1px solid rgba(191,95,255,0.15);
+  border-radius: 7px;
+  padding: 6px;
+  font-size: 11px;
+  color: #BF5FFF;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  text-align: center;
+}
+
+.pin-btn:hover { background: rgba(191,95,255,0.16); }
+
+.pin-btn-delete {
+  background: rgba(255,60,60,0.06);
+  border-color: rgba(255,60,60,0.15);
+  color: #ff5f5f;
+}
+
+.pin-btn-delete:hover { background: rgba(255,60,60,0.14); }
+
+/* ── Empty State ───────── */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 64px 24px;
+  color: #444;
+}
+
+.empty-state svg { width: 48px; height: 48px; stroke: rgba(191,95,255,0.25); fill: none; stroke-width: 1.2; margin: 0 auto 16px; display: block; }
+.empty-title { font-size: 18px; color: #666; font-weight: 300; margin-bottom: 6px; }
+
+/* ── Header row ───────── */
+.board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.board-count {
+  font-size: 11px;
+  color: #555;
+}
+
+/* ── Edit Modal ───────── */
+.edit-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  place-items: center;
+  z-index: 6000;
+  backdrop-filter: blur(8px);
+  padding: 20px;
+}
+
+.edit-modal.open { display: grid; }
+
+.edit-modal-box {
+  background: #0c0c0c;
+  border: 1px solid rgba(191,95,255,0.25);
+  border-radius: 20px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+}
+
+.edit-modal-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: #BF5FFF;
+  box-shadow: 0 0 20px rgba(191,95,255,0.5);
+  border-radius: 20px 20px 0 0;
+}
+
+.edit-eyebrow {
+  font-size: 9.5px;
+  color: #BF5FFF;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  margin-bottom: 6px;
+}
+
+.edit-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 300;
+  color: #f0f0f0;
+  margin-bottom: 22px;
+}
+
+.edit-label {
+  font-size: 10px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.tag-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(191,95,255,0.2);
+  background: rgba(191,95,255,0.06);
+  color: #888;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.tag-chip.selected {
+  background: rgba(191,95,255,0.18);
+  border-color: #BF5FFF;
+  color: #BF5FFF;
+}
+
+.edit-textarea {
+  width: 100%;
+  background: rgba(191,95,255,0.05);
+  border: 1px solid rgba(191,95,255,0.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #f0f0f0;
+  font-size: 13px;
+  font-family: inherit;
+  resize: none;
+  rows: 3;
+  margin-bottom: 20px;
+}
+
+.edit-textarea:focus {
+  outline: none;
+  border-color: #BF5FFF;
+  box-shadow: 0 0 0 3px rgba(191,95,255,0.1);
+}
+
+.edit-footer {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+}
+
+.btn-pur-ghost {
+  background: rgba(191,95,255,0.06);
+  border: 1px solid rgba(191,95,255,0.2);
+  border-radius: 10px;
+  padding: 11px;
+  color: #BF5FFF;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.btn-pur-ghost:hover { background: rgba(191,95,255,0.12); }
+
+.btn-pur-solid {
+  background: #BF5FFF;
+  border: none;
+  border-radius: 10px;
+  padding: 11px;
+  color: #000;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  box-shadow: 0 0 16px rgba(191,95,255,0.3);
+}
+
+.btn-pur-solid:hover { filter: brightness(1.1); }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-eyebrow" style="color:#BF5FFF">Reference Board</div>
+    <h1 class="page-title">{{ project.name }}</h1>
+    <p class="page-subtitle">Visual inspiration board — paste links or upload images, then tag and annotate each pin.</p>
+  </div>
+</div>
+
+<div class="board-shell">
+
+  <!-- ── Filter Sidebar ── -->
+  <div class="filter-sidebar">
+    <div class="filter-title">Filter by tag</div>
+
+    <a href="{{ url_for('ref.board', project_id=project.id) }}"
+       class="filter-tag {% if not active_tag %}active{% endif %}">
+      <span class="filter-tag-dot"></span>
+      All pins
+    </a>
+
+    {% for tag in all_tags %}
+    <a href="{{ url_for('ref.board', project_id=project.id, tag=tag) }}"
+       class="filter-tag {% if active_tag == tag %}active{% endif %}">
+      <span class="filter-tag-dot"></span>
+      {{ tag|capitalize }}
+    </a>
+    {% endfor %}
+
+    <hr class="filter-divider">
+
+    <!-- URL add form -->
+    <div class="upload-panel">
+      <span class="upload-label">Add from URL</span>
+      <form action="{{ url_for('ref.add_url', project_id=project.id) }}" method="POST">
+        <input type="url" name="url" class="upload-input" placeholder="Pinterest / Houzz / any URL" required>
+        <button type="submit" class="upload-btn">Add Pin</button>
+      </form>
+    </div>
+
+    <!-- Image upload form -->
+    <div class="upload-panel" style="margin-top:10px">
+      <span class="upload-label">Upload Image</span>
+      <form action="{{ url_for('ref.add_image', project_id=project.id) }}" method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" class="upload-input" accept="image/*" required style="padding:6px 10px">
+        <button type="submit" class="upload-btn">Upload</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Pin Grid ── -->
+  <div>
+    <div class="board-header">
+      <span class="board-count">{{ pins|length }} pin{% if pins|length != 1 %}s{% endif %}{% if active_tag %} · {{ active_tag }}{% endif %}</span>
+    </div>
+
+    <div class="pin-grid">
+      {% if not pins %}
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+        <div class="empty-title">No pins yet</div>
+        <p style="font-size:13px;color:#333">Paste a URL or upload an image to start building the board.</p>
+      </div>
+      {% endif %}
+
+      {% for pin in pins %}
+      {% set tags_list = (pin.design_tags or '').split(',') | map('trim') | list %}
+      <div class="pin-card" onclick="openEditModal({{ pin.id }}, '{{ (pin.design_tags or '') }}', {{ pin.arch_note | tojson if pin.arch_note else '\"\"' }})">
+
+        {% if pin.image_url %}
+          <img class="pin-img" src="{{ pin.image_url }}" alt="{{ pin.title }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+          <div class="pin-img-placeholder" style="display:none">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+        {% elif pin.local_image %}
+          <img class="pin-img" src="/{{ pin.local_image }}" alt="{{ pin.title }}" loading="lazy">
+        {% else %}
+          <div class="pin-img-placeholder">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+        {% endif %}
+
+        <div class="pin-body">
+          {% if pin.site_name %}
+          <div class="pin-source">{{ pin.site_name }}</div>
+          {% endif %}
+          <div class="pin-title">{{ pin.title or 'Untitled' }}</div>
+
+          {% if tags_list | select | list %}
+          <div class="pin-tags">
+            {% for t in tags_list %}{% if t %}
+            <span class="pin-tag">{{ t }}</span>
+            {% endif %}{% endfor %}
+          </div>
+          {% endif %}
+
+          {% if pin.arch_note %}
+          <div class="pin-note">{{ pin.arch_note }}</div>
+          {% endif %}
+        </div>
+
+        <div class="pin-actions" onclick="event.stopPropagation()">
+          <button class="pin-btn" onclick="openEditModal({{ pin.id }}, '{{ (pin.design_tags or '') }}', {{ pin.arch_note | tojson if pin.arch_note else '\"\"' }})">Edit</button>
+          <form action="{{ url_for('ref.delete_pin', pin_id=pin.id) }}" method="POST" style="flex:1">
+            <button type="submit" class="pin-btn pin-btn-delete" onclick="return confirm('Delete this pin?')">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit Modal ── -->
+<div class="edit-modal" id="editModal" onclick="if(event.target===this)closeModal()">
+  <div class="edit-modal-box">
+    <div class="edit-eyebrow">Architect Annotation</div>
+    <div class="edit-title">Tag &amp; Annotate Pin</div>
+
+    <label class="edit-label">Design Tags</label>
+    <div class="tags-grid" id="tagsGrid">
+      {% for tag in all_tags %}
+      <div class="tag-chip" data-tag="{{ tag }}" onclick="toggleTag(this)">{{ tag|capitalize }}</div>
+      {% endfor %}
+    </div>
+
+    <label class="edit-label">Architect Note</label>
+    <textarea class="edit-textarea" id="archNote" rows="3" placeholder="e.g. Client loves the earthy tones here — revisit for kitchen backsplash"></textarea>
+
+    <div class="edit-footer">
+      <button class="btn-pur-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-pur-solid" onclick="savePin()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let _activePinId = null;
+
+function openEditModal(pinId, tagsStr, note) {
+  _activePinId = pinId;
+  // reset
+  document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('selected'));
+  // set active tags
+  const active = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
+  active.forEach(tag => {
+    const chip = document.querySelector(`.tag-chip[data-tag="${tag}"]`);
+    if (chip) chip.classList.add('selected');
+  });
+  document.getElementById('archNote').value = note || '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+  _activePinId = null;
+}
+
+function toggleTag(el) {
+  el.classList.toggle('selected');
+}
+
+async function savePin() {
+  if (!_activePinId) return;
+  const tags = Array.from(document.querySelectorAll('.tag-chip.selected')).map(c => c.dataset.tag);
+  const note = document.getElementById('archNote').value.trim();
+
+  const res = await fetch(`/board/pin/${_activePinId}/update`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ tags, note })
+  });
+  const data = await res.json();
+  if (data.success) {
+    closeModal();
+    location.reload();
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+{% endblock %}

@@ -422,6 +422,14 @@
         </div>
         Meeting Minutes
       </a>
+
+      <a href="{{ url_for('ref.board', project_id=1) }}"
+         class="nav-item {% if request.endpoint in ['ref.board','ref.update_pin'] %}active{% endif %}">
+        <div class="nav-icon" style="{% if request.endpoint in ['ref.board','ref.update_pin'] %}background:rgba(191,95,255,0.12){% endif %}">
+          <svg viewBox="0 0 24 24" style="{% if request.endpoint in ['ref.board','ref.update_pin'] %}stroke:#BF5FFF{% endif %}"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+        </div>
+        Reference Board
+      </a>
     </div>
     {% endif %}
 

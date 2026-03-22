@@ -1309,6 +1309,7 @@
       <div class="subtab-bar" id="collab-subtabs" style="--accent-sub:#BF5FFF">
         <button class="subtab-purple active" onclick="setCollabSubtab('collab-feed')" id="sub-collab-feed" style="color:#BF5FFF;border-bottom-color:#BF5FFF">Collaboration Feed</button>
         <button class="subtab-purple" onclick="setCollabSubtab('collab-mom')" id="sub-collab-mom" style="color:#444;border-bottom-color:transparent">Meeting Minutes</button>
+        <button class="subtab-purple" onclick="setCollabSubtab('collab-refboard')" id="sub-collab-refboard" style="color:#444;border-bottom-color:transparent">Reference Board</button>
       </div>
 
       <!-- Subtab 1: Collaboration Feed -->
@@ -1362,6 +1363,32 @@
         </iframe>
         <div style="margin-top:10px;font-size:11px;color:#333;text-align:center">
           MoM · Flask :5001 · SQLite · compliance snapshot frozen from BuildIQ · dual-signature lock
+        </div>
+      </div>
+
+      <!-- Subtab 3: Reference Board -->
+      <div id="subtab-collab-refboard" class="collab-subtab-content" style="display:none">
+        <div style="margin-bottom:16px;padding:14px 18px;background:rgba(191,95,255,0.06);border:1px solid rgba(191,95,255,0.15);border-radius:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:#f0f0f0">Client Reference Board</div>
+            <div style="font-size:12px;color:#666;margin-top:3px">
+              Paste Pinterest / Houzz / Instagram URLs · upload images · tag and annotate pins
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;color:#BF5FFF;background:rgba(191,95,255,0.1);padding:4px 12px;border-radius:20px;border:1px solid rgba(191,95,255,0.2)">Member 2 Feature</span>
+            <a href="http://localhost:5001/board/1" target="_blank"
+               style="font-size:12px;color:#BF5FFF;text-decoration:none;background:rgba(191,95,255,0.1);padding:6px 14px;border-radius:7px;border:1px solid rgba(191,95,255,0.2)">
+              Open in BuildSmart →
+            </a>
+          </div>
+        </div>
+        <iframe src="http://localhost:5001/board/1"
+                style="width:100%;height:680px;border:1px solid rgba(191,95,255,0.12);border-radius:12px;background:#080808"
+                title="Reference Board">
+        </iframe>
+        <div style="margin-top:10px;font-size:11px;color:#333;text-align:center">
+          Reference Board · Flask :5001 · OG metadata scraping · local image upload · architect tags &amp; notes
         </div>
       </div>
 

@@ -59,6 +59,7 @@ def create_app():
     from routes.owner_routes import owner_bp
     from routes.approval_routes import approval_bp
     from routes.mom_routes import mom_bp
+    from routes.reference_routes import ref_bp
 
     app.register_blueprint(document_bp)
     app.register_blueprint(auth_bp)
@@ -67,6 +68,7 @@ def create_app():
     app.register_blueprint(owner_bp)
     app.register_blueprint(approval_bp)
     app.register_blueprint(mom_bp)
+    app.register_blueprint(ref_bp)
 
     @app.context_processor
     def inject_user_role():
@@ -85,6 +87,7 @@ def create_app():
     with app.app_context():
         from models.compliance_models import ComplianceRequirement
         from models.mom import MeetingMinutes, MomItem
+        from models.reference_board import ReferencePin
         db.create_all()
 
     return app
