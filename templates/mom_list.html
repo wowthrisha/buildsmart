@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Meeting Minutes — BuildSmart{% endblock %}
+{% block breadcrumb %}Meeting Minutes{% endblock %}
+{% block page_class %}page-mom{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root { --purple: #BF5FFF; --purple-dim: rgba(191,95,255,0.12); --purple-subtle: rgba(191,95,255,0.06); --purple-border: rgba(191,95,255,0.2); --purple-glow: rgba(191,95,255,0.35); }
+  .mom-table { width:100%; border-collapse:collapse; }
+  .mom-table th { font-size:10.5px; font-weight:500; color:#444; text-transform:uppercase; letter-spacing:1px; padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:left; }
+  .mom-table td { padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:13px; vertical-align:middle; }
+  .mom-table tr:last-child td { border-bottom:none; }
+  .mom-table tr:hover td { background:rgba(191,95,255,0.03); }
+  .sig-dot { width:14px; height:14px; border-radius:50%; display:inline-block; margin-right:3px; }
+  .sig-dot.signed { background:var(--purple); box-shadow:0 0 6px var(--purple-glow); }
+  .sig-dot.unsigned { background:transparent; border:1.5px solid #333; }
+  .pill { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:500; }
+  .pill-locked  { background:var(--purple-dim); color:var(--purple); border:1px solid var(--purple-border); }
+  .pill-await   { background:rgba(255,214,0,0.1); color:#FFD600; border:1px solid rgba(255,214,0,0.2); }
+  .pill-draft   { background:rgba(136,136,136,0.1); color:#666; border:1px solid rgba(136,136,136,0.15); }
+  .score-green  { background:rgba(57,255,130,0.1); color:#39FF82; border:1px solid rgba(57,255,130,0.2); }
+  .score-yellow { background:rgba(255,214,0,0.1); color:#FFD600; border:1px solid rgba(255,214,0,0.2); }
+  .score-red    { background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-title-group">
+    <div class="page-eyebrow" style="color:#BF5FFF">Stakeholder Collab · F12</div>
+    <h1 class="page-title">Meeting Minutes</h1>
+    <p class="page-subtitle">MoM linked to compliance snapshot at time of meeting · dual-signature lock</p>
+  </div>
+  <div style="margin-top:4px">
+    <a href="{{ url_for('mom.mom_create', project_id=project.id) }}"
+       style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;background:#BF5FFF;color:#000;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 0 16px rgba(191,95,255,0.3)">
+      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#000;fill:none;stroke-width:2;stroke-linecap:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Meeting
+    </a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+  <div style="background:#080808;border:1px solid var(--purple-border);border-radius:14px;padding:22px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:#BF5FFF;box-shadow:0 0 10px var(--purple-glow)"></div>
+    <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Total MoMs</div>
+    <div style="font-size:32px;font-weight:300;color:#f0f0f0;font-family:'DM Mono',monospace">{{ total }}</div>
+  </div>
+  <div style="background:#080808;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:22px">
+    <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Locked (both signed)</div>
+    <div style="font-size:32px;font-weight:300;color:#BF5FFF;font-family:'DM Mono',monospace">{{ locked }}</div>
+  </div>
+  <div style="background:#080808;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:22px">
+    <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Pending signature</div>
+    <div style="font-size:32px;font-weight:300;color:#FFD600;font-family:'DM Mono',monospace">{{ pending_sig }}</div>
+  </div>
+</div>
+
+<!-- Table -->
+<div style="background:#080808;border:1px solid rgba(255,255,255,0.06);border-radius:14px;overflow:hidden">
+  {% if moms %}
+  <table class="mom-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Date</th>
+        <th>Items</th>
+        <th>Compliance at meeting</th>
+        <th>Signatures</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for mom in moms %}
+      <tr>
+        <td style="color:#f0f0f0;font-weight:500">{{ mom.title }}</td>
+        <td style="color:#666;font-family:'DM Mono',monospace;font-size:12px">
+          {{ mom.meeting_date.strftime('%d %b %Y') if mom.meeting_date else '—' }}
+        </td>
+        <td style="color:#888">{{ mom.items|length }}</td>
+        <td>
+          {% if mom.compliance_score is not none %}
+            {% set pct = (mom.compliance_score * 100)|round|int %}
+            <span class="pill {% if pct >= 80 %}score-green{% elif pct >= 60 %}score-yellow{% else %}score-red{% endif %}">
+              {{ pct }}%
+            </span>
+            <span style="font-size:11px;color:#555;margin-left:6px">{{ mom.compliance_status or '' }}</span>
+          {% else %}
+            <span style="color:#444;font-size:12px">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="sig-dot {% if mom.creator_signed %}signed{% else %}unsigned{% endif %}" title="Creator"></span>
+          <span class="sig-dot {% if mom.client_signed %}signed{% else %}unsigned{% endif %}" title="Client"></span>
+        </td>
+        <td>
+          {% if mom.is_locked %}
+            <span class="pill pill-locked">🔒 Locked</span>
+          {% elif mom.creator_signed %}
+            <span class="pill pill-await">Awaiting client</span>
+          {% else %}
+            <span class="pill pill-draft">Draft</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{{ url_for('mom.mom_detail', mom_id=mom.id) }}"
+             style="font-size:12px;color:#BF5FFF;text-decoration:none">View →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:60px;text-align:center">
+    <div style="width:48px;height:48px;background:var(--purple-subtle);border:1px solid var(--purple-border);border-radius:12px;display:grid;place-items:center;margin:0 auto 16px">
+      <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#BF5FFF;fill:none;stroke-width:1.5;stroke-linecap:round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div style="font-size:16px;color:#f0f0f0;margin-bottom:6px">No meeting minutes yet</div>
+    <div style="font-size:13px;color:#555;margin-bottom:20px">கூட்டக் குறிப்புகள் எதுவும் இல்லை</div>
+    <a href="{{ url_for('mom.mom_create', project_id=project.id) }}"
+       style="display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:8px;background:#BF5FFF;color:#000;font-size:13px;font-weight:600;text-decoration:none">
+      Create first MoM
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}New Meeting Minutes — BuildSmart{% endblock %}
+{% block breadcrumb %}New Meeting{% endblock %}
+{% block page_class %}page-mom{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root { --purple:#BF5FFF; --purple-dim:rgba(191,95,255,0.12); --purple-subtle:rgba(191,95,255,0.06); --purple-border:rgba(191,95,255,0.2); --purple-glow:rgba(191,95,255,0.35); }
+  .form-label { font-size:11px; font-weight:600; color:#444; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:8px; display:block; }
+  .form-input { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px 16px; color:#f0f0f0; font-size:14px; width:100%; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+  .form-input:focus { background:rgba(191,95,255,0.04); border-color:rgba(191,95,255,0.4); box-shadow:0 0 0 4px rgba(191,95,255,0.08); outline:none; }
+  .item-row { display:grid; grid-template-columns:1fr 140px 36px; gap:8px; align-items:center; margin-bottom:8px; }
+  .item-input { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 14px; color:#f0f0f0; font-size:13px; font-family:'DM Sans',sans-serif; width:100%; }
+  .item-input:focus { border-color:rgba(191,95,255,0.35); outline:none; }
+  .state-select { background:#0f0f0f; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 10px; color:#f0f0f0; font-size:12px; font-family:'DM Sans',sans-serif; width:100%; }
+  .remove-btn { width:32px; height:32px; border-radius:7px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#ef4444; cursor:pointer; font-size:16px; display:grid; place-items:center; }
+  .remove-btn:hover { background:rgba(239,68,68,0.2); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-title-group">
+    <div class="page-eyebrow" style="color:#BF5FFF">New Record</div>
+    <h1 class="page-title">Create Meeting Minutes</h1>
+    <p class="page-subtitle">Record decisions with compliance snapshot · {{ project.name }}</p>
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('mom.mom_create', project_id=project.id) }}">
+
+  <!-- Section 1: Meeting info -->
+  <div style="background:#080808;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:24px;margin-bottom:16px">
+    <div style="font-size:12px;color:#BF5FFF;text-transform:uppercase;letter-spacing:1px;margin-bottom:18px">Meeting Information</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div>
+        <label class="form-label">Meeting title</label>
+        <input type="text" name="title" class="form-input"
+               value="Meeting — {{ today }}" placeholder="e.g. Design Review Meeting 1">
+      </div>
+      <div>
+        <label class="form-label">Client email (for signature link)</label>
+        <input type="email" name="client_email" class="form-input" placeholder="client@gmail.com">
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Compliance snapshot notice -->
+  <div style="background:rgba(191,95,255,0.06);border:1px solid rgba(191,95,255,0.2);border-radius:12px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:14px">
+    <div style="width:36px;height:36px;background:rgba(191,95,255,0.15);border-radius:9px;display:grid;place-items:center;flex-shrink:0">
+      <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:#BF5FFF;fill:none;stroke-width:1.8;stroke-linecap:round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div>
+      <div style="font-size:13px;color:#f0f0f0;font-weight:500;margin-bottom:3px">Compliance snapshot will be auto-captured</div>
+      <div style="font-size:12px;color:#666;line-height:1.5">The current F4 fuzzy compliance score will be frozen and attached to this MoM as evidence. It cannot be changed after creation.</div>
+    </div>
+  </div>
+
+  <!-- Section 3: Decision items -->
+  <div style="background:#080808;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:24px;margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-size:12px;color:#BF5FFF;text-transform:uppercase;letter-spacing:1px">Decision Items</div>
+      <button type="button" onclick="addItem()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;background:rgba(191,95,255,0.1);border:1px solid rgba(191,95,255,0.2);color:#BF5FFF;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">
+        <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:#BF5FFF;fill:none;stroke-width:2;stroke-linecap:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add item
+      </button>
+    </div>
+
+    <div style="font-size:10.5px;color:#333;text-transform:uppercase;letter-spacing:1px;display:grid;grid-template-columns:1fr 140px 36px;gap:8px;margin-bottom:8px;padding:0 2px">
+      <span>Decision / discussion point</span>
+      <span>State</span>
+      <span></span>
+    </div>
+
+    <div id="items-container">
+      {% for i in range(3) %}
+      <div class="item-row" id="item-row-{{ i }}">
+        <input type="text" name="items" class="item-input" placeholder="Enter decision or discussion point...">
+        <select name="states" class="state-select">
+          <option value="Pending" selected>Pending</option>
+          <option value="Decided">Decided</option>
+          <option value="Deferred">Deferred</option>
+        </select>
+        <button type="button" onclick="removeItem({{ i }})" class="remove-btn">×</button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;justify-content:flex-end">
+    <a href="{{ url_for('mom.mom_list', project_id=project.id) }}"
+       style="display:inline-flex;align-items:center;padding:10px 20px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.08);color:#666;font-size:13px;text-decoration:none">
+      Cancel
+    </a>
+    <button type="submit"
+            style="display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:8px;background:#BF5FFF;color:#000;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 0 16px rgba(191,95,255,0.3)">
+      Create Minutes
+    </button>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let itemCount = 3;
+
+function addItem() {
+  const container = document.getElementById('items-container');
+  const idx = itemCount++;
+  container.insertAdjacentHTML('beforeend', `
+    <div class="item-row" id="item-row-${idx}">
+      <input type="text" name="items" class="item-input"
+             placeholder="Enter decision or discussion point...">
+      <select name="states" class="state-select">
+        <option value="Pending" selected>Pending</option>
+        <option value="Decided">Decided</option>
+        <option value="Deferred">Deferred</option>
+      </select>
+      <button type="button" onclick="removeItem(${idx})" class="remove-btn">×</button>
+    </div>`);
+}
+
+function removeItem(idx) {
+  const el = document.getElementById('item-row-' + idx);
+  if (el) el.remove();
+}
+</script>
+{% endblock %}

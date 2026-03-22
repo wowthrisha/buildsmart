@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Meeting Minutes — BuildSmart</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #050505; color: #f0f0f0; font-family: 'DM Sans', sans-serif; font-size: 14px; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .card { background: #080808; border: 1px solid rgba(191,95,255,0.2); border-radius: 20px; padding: 40px; width: 100%; max-width: 640px; position: relative; overflow: hidden; }
+    .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: #BF5FFF; box-shadow: 0 0 20px rgba(191,95,255,0.5); }
+    .eyebrow { font-size: 10.5px; font-weight: 500; letter-spacing: 1.8px; text-transform: uppercase; color: #BF5FFF; margin-bottom: 10px; }
+    .title { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 300; letter-spacing: -1px; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; color: #555; margin-bottom: 28px; }
+    .pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .state-decided  { background: rgba(191,95,255,0.15); color: #BF5FFF; border: 1px solid rgba(191,95,255,0.3); }
+    .state-pending  { background: rgba(136,136,136,0.1); color: #888; border: 1px solid rgba(136,136,136,0.2); }
+    .state-deferred { background: rgba(255,214,0,0.1); color: #FFD600; border: 1px solid rgba(255,214,0,0.2); }
+    .section-label { font-size: 10.5px; color: #444; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .item-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); gap: 12px; }
+    .item-row:last-child { border-bottom: none; }
+    .bar-track { background: rgba(255,255,255,0.04); border-radius: 4px; height: 5px; flex: 1; }
+    .bar-fill { height: 100%; background: #BF5FFF; border-radius: 4px; }
+    .sign-btn { width: 100%; padding: 14px; background: #BF5FFF; color: #000; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; box-shadow: 0 0 24px rgba(191,95,255,0.4); transition: all 0.2s; margin-top: 24px; }
+    .sign-btn:hover { filter: brightness(1.1); box-shadow: 0 0 36px rgba(191,95,255,0.5); }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Meeting Minutes — Client Signature</div>
+  <h1 class="title">{{ mom.title }}</h1>
+  <p class="subtitle">
+    {{ mom.project.name }} · {{ mom.meeting_date.strftime('%d %B %Y') if mom.meeting_date else '' }}
+  </p>
+
+  <!-- Compliance score -->
+  {% if mom.compliance_score is not none %}
+  <div style="background:rgba(191,95,255,0.06);border:1px solid rgba(191,95,255,0.15);border-radius:10px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:13px;color:#888">Compliance score at meeting</span>
+    <span style="font-size:14px;color:#BF5FFF;font-weight:500">{{ (mom.compliance_score * 100)|round|int }}%
+      {% if mom.compliance_status %}<span style="font-size:11px;color:#555"> · {{ mom.compliance_status }}</span>{% endif %}
+    </span>
+  </div>
+  {% endif %}
+
+  <!-- Items -->
+  <div style="margin-bottom:24px">
+    <div class="section-label">Decisions recorded</div>
+    {% for item in mom.items|sort(attribute='order') %}
+    <div class="item-row">
+      <span style="font-size:13px;color:#d0d0d0;flex:1">{{ item.text }}</span>
+      <span class="pill state-{{ item.state|lower }}">{{ item.state }}</span>
+    </div>
+    {% else %}
+    <div style="color:#444;font-size:13px;padding:12px 0">No items recorded.</div>
+    {% endfor %}
+  </div>
+
+  <!-- Creator signature -->
+  <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:14px 16px;margin-bottom:24px;display:flex;align-items:center;gap:12px">
+    <div style="width:30px;height:30px;border-radius:50%;background:rgba(191,95,255,0.12);border:1.5px solid #BF5FFF;display:grid;place-items:center;color:#BF5FFF;font-size:14px;flex-shrink:0">✓</div>
+    <div>
+      <div style="font-size:13px;color:#f0f0f0">{{ mom.creator.username if mom.creator else 'Creator' }} signed</div>
+      <div style="font-size:11px;color:#555">{{ mom.creator_signed_at.strftime('%d %b %Y') if mom.creator_signed_at else 'Date unknown' }}</div>
+    </div>
+  </div>
+
+  {% if mom.is_locked or mom.client_signed %}
+  <div style="background:rgba(191,95,255,0.08);border:1px solid rgba(191,95,255,0.25);border-radius:12px;padding:16px;text-align:center;color:#BF5FFF;font-size:14px;font-weight:500">
+    🔒 These minutes are already signed and locked.
+  </div>
+  {% else %}
+  <form method="POST">
+    <div style="background:rgba(191,95,255,0.04);border:1px solid rgba(191,95,255,0.12);border-radius:10px;padding:14px;margin-bottom:0">
+      <p style="font-size:12px;color:#555;line-height:1.6">By clicking below, you confirm that you have reviewed these meeting minutes and agree with the decisions recorded. This action is permanent and will lock the document.</p>
+    </div>
+    <button type="submit" class="sign-btn">I confirm and sign these minutes</button>
+  </form>
+  {% endif %}
+
+  <div style="margin-top:20px;text-align:center;font-size:11px;color:#333">BuildSmart · Dual-signature MoM · Powered by BuildIQ</div>
+</div>
+</body>
+</html>

@@ -484,6 +484,8 @@
   }
   .subtab:hover { color: #2979FF; }
   .subtab.active { color: #2979FF; border-bottom-color: #2979FF; font-weight: 500; }
+  .subtab-purple { padding:8px 18px; background:transparent; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:400; transition:all 0.2s; margin-bottom:-1px; }
+  .subtab-purple:hover { color:#BF5FFF !important; }
   .stat-change svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   /* ─── Two-column content area ───────────────────────── */
@@ -1300,6 +1302,71 @@
       </div>
     </div><!-- /subtab-approval-history -->
 
+    <!-- ═══════ STAKEHOLDER COLLAB (Member 2 — Purple) ═══════ -->
+    <div id="page-content-stakeholder_collab" style="display:none">
+
+      <!-- Subtab bar — purple only -->
+      <div class="subtab-bar" id="collab-subtabs" style="--accent-sub:#BF5FFF">
+        <button class="subtab-purple active" onclick="setCollabSubtab('collab-feed')" id="sub-collab-feed" style="color:#BF5FFF;border-bottom-color:#BF5FFF">Collaboration Feed</button>
+        <button class="subtab-purple" onclick="setCollabSubtab('collab-mom')" id="sub-collab-mom" style="color:#444;border-bottom-color:transparent">Meeting Minutes</button>
+      </div>
+
+      <!-- Subtab 1: Collaboration Feed -->
+      <div id="subtab-collab-feed" class="collab-subtab-content">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:#080808;border:1px solid rgba(191,95,255,0.15);border-radius:14px;padding:24px">
+            <div style="font-size:11px;color:#BF5FFF;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">Active Team Members</div>
+            {% for member in [('JK','J. Kim','Architect','#BF5FFF'),('MC','M. Chen','Sr. Engineer','#D48FFF'),('AR','A. Rivera','Project Lead','#9B3FCC'),('LP','L. Patel','Contractor','#7B2FAA')] %}
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+              <div style="width:30px;height:30px;border-radius:50%;background:rgba(191,95,255,0.15);border:1px solid rgba(191,95,255,0.3);display:grid;place-items:center;font-size:11px;font-weight:600;color:#BF5FFF">{{ member[0] }}</div>
+              <div>
+                <div style="font-size:13px;color:#f0f0f0">{{ member[1] }}</div>
+                <div style="font-size:11px;color:#555">{{ member[2] }}</div>
+              </div>
+              <div style="margin-left:auto;width:8px;height:8px;border-radius:50%;background:#39FF82;box-shadow:0 0 6px rgba(57,255,130,0.5)"></div>
+            </div>
+            {% endfor %}
+          </div>
+          <div style="background:#080808;border:1px solid rgba(191,95,255,0.15);border-radius:14px;padding:24px">
+            <div style="font-size:11px;color:#BF5FFF;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">Recent Activity</div>
+            {% for note in [('JK','Document package submitted for authority review','2h ago'),('MC','Compliance check passed — FAR within limits','5h ago'),('AR','New MoM created for design review','Yesterday'),('LP','Materials delivery confirmed','Mar 8')] %}
+            <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+              <div style="font-size:12.5px;color:#d0d0d0;line-height:1.5"><span style="color:#BF5FFF;font-weight:500">{{ note[0] }}</span> · {{ note[1] }}</div>
+              <div style="font-size:11px;color:#444;margin-top:3px">{{ note[2] }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Subtab 2: Meeting Minutes MoM -->
+      <div id="subtab-collab-mom" class="collab-subtab-content" style="display:none">
+        <div style="margin-bottom:16px;padding:14px 18px;background:rgba(191,95,255,0.06);border:1px solid rgba(191,95,255,0.15);border-radius:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:#f0f0f0">Meeting Minutes (MoM)</div>
+            <div style="font-size:12px;color:#666;margin-top:3px">
+              Record decisions · freeze compliance snapshot · dual signature lock
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;color:#BF5FFF;background:rgba(191,95,255,0.1);padding:4px 12px;border-radius:20px;border:1px solid rgba(191,95,255,0.2)">Member 2 Feature</span>
+            <a href="http://localhost:5001/mom/1" target="_blank"
+               style="font-size:12px;color:#BF5FFF;text-decoration:none;background:rgba(191,95,255,0.1);padding:6px 14px;border-radius:7px;border:1px solid rgba(191,95,255,0.2)">
+              Open in BuildSmart →
+            </a>
+          </div>
+        </div>
+        <iframe src="http://localhost:5001/mom/1"
+                style="width:100%;height:680px;border:1px solid rgba(191,95,255,0.12);border-radius:12px;background:#080808"
+                title="Meeting Minutes">
+        </iframe>
+        <div style="margin-top:10px;font-size:11px;color:#333;text-align:center">
+          MoM · Flask :5001 · SQLite · compliance snapshot frozen from BuildIQ · dual-signature lock
+        </div>
+      </div>
+
+    </div><!-- /page-content-stakeholder_collab -->
+
   </main>
 
 </div>
@@ -1353,10 +1420,42 @@
     document.getElementById('page-subtitle').textContent = meta.subtitle;
     document.getElementById('breadcrumb-active').textContent = meta.breadcrumb;
     document.getElementById('cta-label').textContent = meta.cta;
-    // Show subtabs only on approval_flow
+
+    // Toggle approval_flow subtab bar
     const subtabs = document.getElementById('approval-subtabs');
     if (subtabs) subtabs.style.display = pageId === 'approval_flow' ? 'flex' : 'none';
-    if (pageId === 'approval_flow') setSubtab('approval-queue');
+
+    // Toggle page-specific content panels
+    ['stakeholder_collab'].forEach(pid => {
+      const el = document.getElementById('page-content-' + pid);
+      if (el) el.style.display = pageId === pid ? 'block' : 'none';
+    });
+
+    // Hide/show approval_flow subtab content
+    const afContent = document.getElementById('subtab-approval-queue');
+    const afBuildiq = document.getElementById('subtab-buildiq-compliance');
+    const afHistory = document.getElementById('subtab-approval-history');
+    const isAF = pageId === 'approval_flow';
+    [afContent, afBuildiq, afHistory].forEach(el => { if (el) el.style.display = 'none'; });
+    if (isAF) setSubtab('approval-queue');
+
+    // Collab subtabs
+    const collabSubs = document.getElementById('collab-subtabs');
+    if (collabSubs) collabSubs.style.display = pageId === 'stakeholder_collab' ? 'flex' : 'none';
+    if (pageId === 'stakeholder_collab') setCollabSubtab('collab-feed');
+  }
+
+  function setCollabSubtab(id) {
+    document.querySelectorAll('.collab-subtab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.subtab-purple').forEach(el => {
+      el.style.color = '#444';
+      el.style.borderBottomColor = 'transparent';
+      el.style.fontWeight = '400';
+    });
+    const content = document.getElementById('subtab-' + id);
+    const btn = document.getElementById('sub-' + id);
+    if (content) content.style.display = 'block';
+    if (btn) { btn.style.color = '#BF5FFF'; btn.style.borderBottomColor = '#BF5FFF'; btn.style.fontWeight = '500'; }
   }
 
   function setSubtab(id) {
