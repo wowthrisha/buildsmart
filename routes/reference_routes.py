@@ -12,6 +12,26 @@ from models.user import User
 ref_bp = Blueprint('ref', __name__)
 
 
+# ── Redirect /board → first project ──────────────────────────────────────────
+
+@ref_bp.route('/board')
+@jwt_required()
+def board_home():
+    from models.project import Project
+    from models.user import User
+    uid  = get_jwt_identity()
+    user = User.query.get(uid)
+    if user and user.role == 'Owner':
+        project = Project.query.filter_by(owner_id=uid).first()
+    else:
+        project = Project.query.filter_by(architect_id=uid).order_by(Project.created_at).first()
+        if not project:
+            project = Project.query.first()
+    if project:
+        return redirect(url_for('ref.board', project_id=project.id))
+    return redirect(url_for('document.dashboard'))
+
+
 # ── Board view ────────────────────────────────────────────────────────────────
 
 @ref_bp.route('/board/<int:project_id>')

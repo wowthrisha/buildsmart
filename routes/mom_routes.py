@@ -106,7 +106,15 @@ def _check_lock(mom):
 @jwt_required()
 def mom_home():
     from models.project import Project
-    project = Project.query.first()
+    from models.user import User
+    uid  = get_jwt_identity()
+    user = User.query.get(uid)
+    if user and user.role == 'Owner':
+        project = Project.query.filter_by(owner_id=uid).first()
+    else:
+        project = Project.query.filter_by(architect_id=uid).order_by(Project.created_at).first()
+        if not project:
+            project = Project.query.first()
     if project:
         return redirect(url_for('mom.mom_list', project_id=project.id))
     return redirect(url_for('document.dashboard'))

@@ -21,14 +21,22 @@ def _get_owner_or_redirect():
     return user, None
 
 
+def _owner_project(uid):
+    """Return the Project assigned to this owner, or None."""
+    from models.project import Project
+    return Project.query.filter_by(owner_id=uid).first()
+
+
 @owner_bp.route("/")
 @jwt_required()
 def owner_home():
     user, err = _get_owner_or_redirect()
     if err:
         return err
+    project = _owner_project(user.id)
     buildiq_url = os.getenv("BUILDIQ_URL", "http://localhost:8000")
-    return render_template("owner_home.html", user=user, buildiq_url=buildiq_url)
+    return render_template("owner_home.html", user=user, project=project,
+                           buildiq_url=buildiq_url)
 
 
 @owner_bp.route("/ask")
@@ -61,5 +69,11 @@ def documents():
     if err:
         return err
     from models.document import Document
-    docs = Document.query.order_by(Document.created_at.desc()).all()
-    return render_template("owner_documents.html", user=user, docs=docs)
+    project = _owner_project(user.id)
+    if project:
+        docs = Document.query.filter_by(project_id=project.id)\
+                             .order_by(Document.created_at.desc()).all()
+    else:
+        docs = Document.query.order_by(Document.created_at.desc()).all()
+    return render_template("owner_documents.html", user=user, docs=docs,
+                           project=project)

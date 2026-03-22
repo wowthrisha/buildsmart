@@ -107,7 +107,7 @@
           <option value="Safety Compliance Document">Safety Compliance Document</option>
         </select>
       </div>
-      <input type="hidden" name="project_id" value="1">
+      <input type="hidden" name="project_id" value="{{ project.id if project else 1 }}">
       <div style="margin-bottom:20px">
         <label style="display:block;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">File</label>
         <input type="file" name="file" required

@@ -11,6 +11,13 @@ class Project(db.Model):
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    # Who manages this project (Architect) and who owns it (client/Owner)
+    architect_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    owner_id     = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+
+    architect = db.relationship("User", foreign_keys=[architect_id], backref="managed_projects")
+    owner     = db.relationship("User", foreign_keys=[owner_id],     backref="owned_projects")
+
     timeline_events = db.relationship(
         "TimelineEvent",
         back_populates="project",

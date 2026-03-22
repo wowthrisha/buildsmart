@@ -88,11 +88,21 @@ def create_app():
     def inject_projects():
         from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
         from models.project import Project
+        from models.user import User
         try:
             verify_jwt_in_request(optional=True)
             uid = get_jwt_identity()
             if uid:
-                projects = Project.query.order_by(Project.created_at.desc()).limit(5).all()
+                user = User.query.get(uid)
+                if user and user.role == 'Owner':
+                    # Owner sees only their assigned project(s)
+                    projects = Project.query.filter_by(owner_id=uid).order_by(Project.created_at.desc()).all()
+                else:
+                    # Architect sees projects they manage
+                    projects = Project.query.filter_by(architect_id=uid).order_by(Project.created_at.desc()).limit(10).all()
+                    if not projects:
+                        # Fallback: unassigned projects (for existing data before migration)
+                        projects = Project.query.filter_by(architect_id=None).order_by(Project.created_at.desc()).limit(10).all()
                 return {'get_all_projects': lambda: projects, 'active_project_id': None}
         except Exception:
             pass
@@ -103,10 +113,29 @@ def create_app():
         from models.mom import MeetingMinutes, MomItem
         from models.reference_board import ReferencePin
         db.create_all()
+        _migrate_columns(app)
         _seed_demo_users(app)
         _seed_demo_data(app)
 
     return app
+
+
+def _migrate_columns(app):
+    """Add new columns to existing SQLite tables without dropping data."""
+    with app.app_context():
+        conn = db.engine.raw_connection()
+        cur  = conn.cursor()
+        for col, typedef in [
+            ('architect_id', 'INTEGER REFERENCES users(id)'),
+            ('owner_id',     'INTEGER REFERENCES users(id)'),
+        ]:
+            try:
+                cur.execute(f'ALTER TABLE projects ADD COLUMN {col} {typedef}')
+                conn.commit()
+                print(f'Migrated: projects.{col} added')
+            except Exception:
+                pass  # column already exists
+        conn.close()
 
 
 def _seed_demo_users(app):
@@ -147,7 +176,9 @@ def _seed_demo_data(app):
     now = datetime.utcnow
 
     with app.app_context():
-        arch = User.query.filter_by(email='arch@test.com').first()
+        arch  = User.query.filter_by(email='arch@test.com').first()
+        owner = User.query.filter_by(email='owner@test.com').first()
+        auth  = User.query.filter_by(email='auth@test.com').first()
         if not arch:
             return
 
@@ -155,20 +186,35 @@ def _seed_demo_data(app):
         if Project.query.count() == 0:
             projects_data = [
                 ('Coimbatore Residential — Plot 42',
-                 'G+1 residential, 30x40ft, CCMC zone, Dr. Suresh'),
+                 'G+1 residential, 30x40ft, CCMC zone, Dr. Suresh',
+                 arch, owner),
                 ('Chennai Commercial — Anna Nagar Block C',
-                 'G+3 commercial, 50x60ft, CMC zone, retail + office'),
+                 'G+3 commercial, 50x60ft, CMC zone, Mr. Rajesh',
+                 arch, auth),
                 ('Madurai Villa — Surveyor Colony',
-                 'Single-storey villa, 40x50ft, MCC zone, Dr. Rajan'),
+                 'Single-storey villa, 40x50ft, MCC zone, Dr. Rajan',
+                 arch, None),
             ]
             projects = []
-            for name, desc in projects_data:
-                p = Project(name=name, description=desc)
+            for name, desc, arc, own in projects_data:
+                p = Project(
+                    name=name, description=desc,
+                    architect_id=arc.id if arc else None,
+                    owner_id=own.id if own else None,
+                )
                 db.session.add(p)
                 projects.append(p)
             db.session.flush()
         else:
             projects = Project.query.order_by(Project.created_at).all()
+            # Backfill architect/owner onto existing projects if unset
+            for i, (arc, own) in enumerate([(arch, owner), (arch, auth), (arch, None)]):
+                if i < len(projects):
+                    p = projects[i]
+                    if p.architect_id is None and arc:
+                        p.architect_id = arc.id
+                    if p.owner_id is None and own:
+                        p.owner_id = own.id
 
         p1 = projects[0]
         p2 = projects[1] if len(projects) > 1 else p1

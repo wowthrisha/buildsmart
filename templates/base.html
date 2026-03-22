@@ -353,8 +353,17 @@
 
     {% if current_user_role == 'Owner' %}
     <!-- Owner nav -->
+    {% set owner_projects = get_all_projects() %}
+    {% set my_project = owner_projects[0] if owner_projects else None %}
     <div class="sidebar-section">
+      {% if my_project %}
+      <div class="sidebar-label" style="color:#BF5FFF;font-size:9.5px">YOUR PROJECT</div>
+      <div style="font-size:12px;color:#888;padding:4px 12px 10px;line-height:1.4;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:8px">
+        {{ my_project.name }}
+      </div>
+      {% else %}
       <div class="sidebar-label">My Plans</div>
+      {% endif %}
 
       <a href="{{ url_for('owner.owner_home') }}"
          class="nav-item {% if request.endpoint == 'owner.owner_home' %}active{% endif %}">
