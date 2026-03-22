@@ -17,7 +17,35 @@ VALID_STATES = {'Decided', 'Pending', 'Deferred'}
 
 
 def _fetch_compliance_snapshot():
-    """Pull latest compliance check from BuildIQ. Returns (score, status, snapshot_json)."""
+    """Pull latest compliance check. Prefers owner's saved payload, falls back to API call."""
+    # 1) Try the payload saved by the owner via /owner/save-compliance
+    try:
+        saved_path = os.path.join(os.path.dirname(__file__), '..', 'instance', 'last_compliance.json')
+        saved_path = os.path.abspath(saved_path)
+        if os.path.exists(saved_path):
+            with open(saved_path) as f:
+                d = json.load(f)
+            results = d.get('results', {})
+            if results:
+                scores = [
+                    v.get('confidence') or v.get('score', 0)
+                    for v in results.values() if isinstance(v, dict)
+                ]
+                comp_score = round(sum(scores) / len(scores), 3) if scores else None
+                comp_status = d.get('overall_status', '')
+                comp_snapshot = json.dumps({
+                    k: {
+                        'confidence': v.get('confidence') or v.get('score', 0),
+                        'status': v.get('status', ''),
+                        'fix': v.get('fix_suggestion', '')
+                    }
+                    for k, v in results.items() if isinstance(v, dict)
+                })
+                return comp_score, comp_status, comp_snapshot
+    except Exception:
+        pass
+
+    # 2) Fall back to a live API call with sample values
     try:
         import requests as req
         base = os.getenv('BUILDIQ_URL', 'http://localhost:8000')
@@ -59,6 +87,18 @@ def _check_lock(mom):
         mom.locked_at = datetime.utcnow()
 
 
+# ── Redirect /mom → first project ─────────────────────────────────────────────
+
+@mom_bp.route('/mom')
+@jwt_required()
+def mom_home():
+    from models.project import Project
+    project = Project.query.first()
+    if project:
+        return redirect(url_for('mom.mom_list', project_id=project.id))
+    return redirect(url_for('document.dashboard'))
+
+
 # ── List all MoMs for a project ───────────────────────────────────────────────
 
 @mom_bp.route('/mom/<int:project_id>')
@@ -72,7 +112,8 @@ def mom_list(project_id):
     locked = sum(1 for m in moms if m.is_locked)
     pending_sig = sum(1 for m in moms if not m.is_locked)
     return render_template('mom_list.html', moms=moms, project=project, user=user,
-                           total=total, locked=locked, pending_sig=pending_sig)
+                           total=total, locked=locked, pending_sig=pending_sig,
+                           active_project_id=project_id)
 
 
 # ── Create new MoM ────────────────────────────────────────────────────────────
@@ -195,10 +236,21 @@ def mom_sign(mom_id):
 @mom_bp.route('/mom/client-sign/<token>', methods=['GET', 'POST'])
 def mom_client_sign(token):
     mom = MeetingMinutes.query.filter_by(share_token=token).first_or_404()
-    if request.method == 'POST' and not mom.client_signed and not mom.is_locked:
+
+    # If already locked, show confirmation page — link is no longer actionable
+    if mom.is_locked:
+        return render_template('mom_signed.html', mom=mom, already_locked=True)
+
+    if request.method == 'POST' and not mom.client_signed:
         mom.client_signed    = True
         mom.client_signed_at = datetime.utcnow()
         _check_lock(mom)
+
+        # Invalidate token after both parties have signed
+        if mom.is_locked:
+            mom.share_token = secrets.token_urlsafe(32) + '_used'
+
         db.session.commit()
-        return render_template('mom_signed.html', mom=mom)
+        return render_template('mom_signed.html', mom=mom, already_locked=False)
+
     return render_template('mom_client_sign.html', mom=mom)

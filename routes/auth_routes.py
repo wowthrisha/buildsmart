@@ -8,6 +8,11 @@ import datetime
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 VALID_ROLES = {"Architect", "Engineer", "Contractor", "Authority", "Owner"}
+ROLE_LIST   = ["Architect", "Engineer", "Contractor", "Authority", "Owner"]
+
+
+def _current_user():
+    return User.query.get(get_jwt_identity())
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -67,3 +72,31 @@ def logout():
     resp.delete_cookie("access_token_cookie")
     flash("You have been logged out.", "success")
     return resp
+
+
+@auth_bp.route("/users")
+@jwt_required()
+def user_management():
+    current = _current_user()
+    if current.role not in ['Authority', 'Architect']:
+        return redirect(url_for('document.dashboard'))
+    users = User.query.order_by(User.role, User.username).all()
+    return render_template('user_management.html',
+                           all_users=users,
+                           roles=ROLE_LIST,
+                           user=current)
+
+
+@auth_bp.route("/users/<int:user_id>/set-role", methods=["POST"])
+@jwt_required()
+def set_user_role(user_id):
+    current = _current_user()
+    if current.role not in ['Authority', 'Architect']:
+        return redirect(url_for('document.dashboard'))
+    target = User.query.get_or_404(user_id)
+    new_role = request.form.get('role')
+    if new_role in VALID_ROLES:
+        target.role = new_role
+        db.session.commit()
+        flash(f'Role updated to {new_role}.', 'success')
+    return redirect(url_for('auth.user_management'))

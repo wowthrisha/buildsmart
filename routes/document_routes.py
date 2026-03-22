@@ -1,8 +1,9 @@
-from flask import Blueprint, request, redirect, render_template, url_for, send_file, jsonify, flash
+from flask import Blueprint, request, redirect, render_template, url_for, send_file, jsonify, flash, abort
 from extensions import db
 from models.document import Document, DocumentVersion, DocumentLog
 from models.user import User
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from werkzeug.utils import safe_join
 import os
 
 document_bp = Blueprint("document", __name__)
@@ -258,9 +259,14 @@ def upload_new_version(doc_id):
 
 
 @document_bp.route("/download/<int:version_id>")
+@jwt_required()
 def download_file(version_id):
-    version = DocumentVersion.query.get(version_id)
-    return send_file(version.file_path, as_attachment=True)
+    version = DocumentVersion.query.get_or_404(version_id)
+    upload_dir = os.path.abspath('uploads')
+    safe_path = safe_join(upload_dir, os.path.basename(version.file_path))
+    if not safe_path or not os.path.exists(safe_path):
+        abort(404)
+    return send_file(safe_path, as_attachment=True)
 
 
 @document_bp.route("/logs")

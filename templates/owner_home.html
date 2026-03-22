@@ -361,6 +361,7 @@
 <div class="owner-edu-strip">
   <h2>Is your building plan ready for approval?</h2>
   <p class="edu-ta">உங்கள் கட்டிட திட்டம் அனுமதிக்கு தயாரா?</p>
+  <span id="ai-status" style="font-size:11px;color:#444;display:block;margin-bottom:10px">● Checking AI engine...</span>
   <p class="edu-desc">
     Upload a photo of your sketch. Our AI reads the dimensions and checks
     them against Tamil Nadu building rules (TNCDBR 2019) in seconds.
@@ -605,15 +606,38 @@ async function handleUpload(file) {
     document.getElementById('ocr-loading').style.display = 'none';
     renderResults(ext, questions, comp);
 
+    // Save compliance result so MoM can embed it
+    fetch('/owner/save-compliance', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(comp)
+    }).catch(() => {});  // fire-and-forget
+
   } catch (e) {
     document.getElementById('ocr-loading').style.display = 'none';
     document.getElementById('upload-zone').style.display = 'block';
-    // Remove any previous error
     const prev = document.querySelector('.upload-error');
     if (prev) prev.remove();
+
+    let msg = e.message || 'Unknown error';
+    let sub = 'தவறு ஏற்பட்டது — மீண்டும் முயற்சிக்கவும்';
+    if (msg.includes('NetworkError') || msg.includes('Failed to fetch')) {
+      msg = 'Cannot reach BuildIQ — make sure the server is running on port 8000';
+      sub = 'BuildIQ சர்வர் இயங்கவில்லை';
+    } else if (msg.includes('500') || msg.includes('Internal')) {
+      msg = 'Server error while processing your image — try a clearer, well-lit photo';
+      sub = 'படம் தெளிவற்றது, மீண்டும் முயற்சிக்கவும்';
+    } else if (msg.includes('413') || msg.includes('too large')) {
+      msg = 'Image too large — please use a photo under 10 MB';
+      sub = 'படம் மிகவும் பெரியது';
+    }
+
     document.getElementById('upload-zone').insertAdjacentHTML(
       'beforeend',
-      `<div class="upload-error">Error: ${e.message}</div>`
+      `<div class="upload-error" style="margin-top:12px;padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;text-align:left">
+        <div style="font-size:13px;color:#ef4444;font-weight:500">${msg}</div>
+        <div style="font-size:11px;color:#a33;margin-top:3px">${sub}</div>
+      </div>`
     );
   }
 }
@@ -744,23 +768,71 @@ async function askQuestion() {
   ans.innerHTML = '<div class="ans-loading">Thinking... சிந்திக்கிறேன்...</div>';
   const isTamil = /[\u0B80-\u0BFF]/.test(q);
   try {
-    const r = await fetch(`${BUILDIQ}/api/explain-rule`, {
+    const r = await fetch(`${BUILDIQ}/api/demo-explain`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({question: q, language: isTamil ? 'ta' : 'en'})
     });
     const d = await r.json();
     const text = d.answer || d.response || d.explanation || 'No answer found.';
-    const srcs = d.sources || [];
+    const srcs = d.citations || d.sources || [];
     ans.innerHTML = `
       <div class="ans-text">${text}</div>
       ${srcs.length ? `<div class="ans-src">
-        Source: ${srcs.map(s => s.source || 'TNCDBR 2019').join(', ')}
+        Source: ${srcs.map(s => s.source || s.rule_id || 'TNCDBR 2019').join(', ')}
       </div>` : ''}`;
   } catch (e) {
-    ans.innerHTML = '<div class="ans-err">Could not get answer. Is BuildIQ running?</div>';
+    ans.innerHTML = '<div class="ans-err">Could not get answer. Make sure BuildIQ is running on port 8000.</div>';
   }
 }
+
+async function checkBuildIQStatus() {
+  try {
+    const r = await fetch(`${BUILDIQ}/health`, {signal: AbortSignal.timeout(3000)});
+    if (!r.ok) throw new Error('not ok');
+    const d = await r.json();
+    const chunks = d.rag_chunks || 0;
+    const indicator = document.getElementById('ai-status');
+    if (indicator) {
+      indicator.innerHTML = `<span style="color:#39FF82">●</span> AI engine ready · ${chunks} rules loaded`;
+      indicator.style.color = '#39FF82';
+    }
+  } catch {
+    const indicator = document.getElementById('ai-status');
+    if (indicator) {
+      indicator.innerHTML = `<span style="color:#FF6B1A">●</span> AI engine offline`;
+      indicator.style.color = '#FF6B1A';
+    }
+    const zone = document.getElementById('upload-zone');
+    if (!zone) return;
+    const existing = document.getElementById('ai-offline-warn');
+    if (existing) return;
+    zone.insertAdjacentHTML('beforebegin', `
+      <div id="ai-offline-warn" style="
+        padding:12px 16px;margin-bottom:16px;
+        background:rgba(255,107,26,0.08);
+        border:1px solid rgba(255,107,26,0.25);
+        border-radius:10px;font-size:13px;color:#FF6B1A;
+        display:flex;align-items:center;gap:10px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div>
+          <div style="font-weight:500">AI engine is offline</div>
+          <div style="font-size:11px;opacity:0.8;margin-top:2px">
+            Start BuildIQ:
+            <code style="background:rgba(0,0,0,0.3);padding:1px 6px;border-radius:4px">
+              PYTHONPATH=. uvicorn backend.main:app --port 8000
+            </code>
+          </div>
+        </div>
+      </div>`);
+  }
+}
+checkBuildIQStatus();
 
 function downloadChecklist() {
   const txt = `BUILDING PLAN DOCUMENT CHECKLIST — BuildIQ

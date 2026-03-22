@@ -14,16 +14,30 @@
 </head>
 <body>
 <div class="card">
+  {% if already_locked %}
+  <div style="width:64px;height:64px;background:rgba(136,136,136,0.12);border:1.5px solid #555;border-radius:50%;display:grid;place-items:center;margin:0 auto 24px">
+    <svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#888;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+  </div>
+  <div style="font-size:10.5px;color:#555;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Already signed</div>
+  <h1 style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;letter-spacing:-1px;margin-bottom:10px;color:#888">Document Locked</h1>
+  <p style="font-size:14px;color:#666;margin-bottom:8px">These minutes have already been signed and locked by both parties.</p>
+  <p style="font-size:13px;color:#444;margin-bottom:24px">இந்த இணைப்பு இனி செயல்படாது.</p>
+  <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;margin-bottom:24px">
+    <div style="font-size:12px;color:#666;margin-bottom:4px">{{ mom.title }}</div>
+    {% if mom.locked_at %}
+    <div style="font-size:11px;color:#444">Locked {{ mom.locked_at.strftime('%d %b %Y at %H:%M UTC') }}</div>
+    {% endif %}
+  </div>
+  <p style="font-size:12px;color:#333;line-height:1.6">This share link is no longer active. Contact the architect if you need a copy of the signed minutes.</p>
+
+  {% else %}
   <div style="width:64px;height:64px;background:rgba(191,95,255,0.15);border:1.5px solid #BF5FFF;border-radius:50%;display:grid;place-items:center;margin:0 auto 24px;box-shadow:0 0 30px rgba(191,95,255,0.3)">
     <svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#BF5FFF;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>
   </div>
-
   <div style="font-size:10.5px;color:#BF5FFF;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Signature confirmed</div>
   <h1 style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;letter-spacing:-1px;margin-bottom:10px">Signed &amp; Locked</h1>
-
   <p style="font-size:14px;color:#888;margin-bottom:6px">You have successfully signed the meeting minutes.</p>
   <p style="font-size:14px;color:#666;margin-bottom:24px">உங்கள் கையெழுத்து பதிவு செய்யப்பட்டது.</p>
-
   <div style="background:rgba(191,95,255,0.06);border:1px solid rgba(191,95,255,0.15);border-radius:10px;padding:16px;margin-bottom:24px">
     <div style="font-size:12px;color:#BF5FFF;margin-bottom:4px">{{ mom.title }}</div>
     <div style="font-size:11px;color:#555">{{ mom.project.name }} · {{ mom.meeting_date.strftime('%d %B %Y') if mom.meeting_date else '' }}</div>
@@ -31,8 +45,8 @@
     <div style="font-size:11px;color:#444;margin-top:6px">Locked {{ mom.locked_at.strftime('%d %b %Y at %H:%M UTC') }}</div>
     {% endif %}
   </div>
-
   <p style="font-size:12px;color:#444;line-height:1.6">This document is now locked. Both parties have signed and no further changes can be made. Keep this page as confirmation of your signature.</p>
+  {% endif %}
 
   <div style="margin-top:28px;font-size:11px;color:#2a2a2a">BuildSmart · Dual-signature MoM</div>
 </div>

@@ -84,13 +84,147 @@ def create_app():
             pass
         return {'current_user_role': ''}
 
+    @app.context_processor
+    def inject_projects():
+        from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+        from models.project import Project
+        try:
+            verify_jwt_in_request(optional=True)
+            uid = get_jwt_identity()
+            if uid:
+                projects = Project.query.order_by(Project.created_at.desc()).limit(5).all()
+                return {'get_all_projects': lambda: projects, 'active_project_id': None}
+        except Exception:
+            pass
+        return {'get_all_projects': lambda: [], 'active_project_id': None}
+
     with app.app_context():
         from models.compliance_models import ComplianceRequirement
         from models.mom import MeetingMinutes, MomItem
         from models.reference_board import ReferencePin
         db.create_all()
+        _seed_demo_users(app)
+        _seed_demo_data(app)
 
     return app
+
+
+def _seed_demo_users(app):
+    """Ensure demo accounts exist with known passwords. Safe to call repeatedly."""
+    from models.user import User
+    from werkzeug.security import generate_password_hash
+    demos = [
+        {'username': 'arch_demo',  'email': 'arch@test.com',  'role': 'Architect'},
+        {'username': 'owner_demo', 'email': 'owner@test.com', 'role': 'Owner'},
+        {'username': 'eng_demo',   'email': 'eng@test.com',   'role': 'Architect'},
+        {'username': 'auth_demo',  'email': 'auth@test.com',  'role': 'Owner'},
+    ]
+    with app.app_context():
+        for d in demos:
+            user = User.query.filter_by(email=d['email']).first()
+            if user is None:
+                user = User(username=d['username'], email=d['email'], role=d['role'])
+                db.session.add(user)
+            # Always reset password so demo creds are reliable
+            user.password_hash = generate_password_hash('test123')
+        db.session.commit()
+
+
+def _seed_demo_data(app):
+    """Seed a demo project with timeline, approvals, compliance, and MoM. Idempotent."""
+    from models.project import Project, TimelineEvent
+    from models.approval import ApprovalRequest
+    from models.compliance_models import ComplianceRequirement, REQUIRED_DOCUMENT_TYPES
+    from models.mom import MeetingMinutes, MomItem
+    from models.user import User
+    import secrets
+    from datetime import datetime, timedelta
+
+    with app.app_context():
+        if Project.query.count() > 0:
+            return
+
+        arch = User.query.filter_by(email='arch@test.com').first()
+        if not arch:
+            return
+
+        p = Project(
+            name='Coimbatore Residential — Plot 42',
+            description='G+1 residential, 30x40ft, CCMC zone, Dr. Suresh',
+        )
+        db.session.add(p)
+        db.session.flush()
+
+        stages = [
+            ('Project Created',       'Project initiated by architect'),
+            ('Document Uploaded',     'FMB sketch uploaded v1'),
+            ('Compliance Check Run',  'AI compliance score: 78%'),
+            ('Submitted for Approval','Application submitted to CCMC'),
+        ]
+        for i, (etype, desc) in enumerate(stages):
+            db.session.add(TimelineEvent(
+                project_id=p.id,
+                event_type=etype,
+                description=desc,
+                created_at=datetime.utcnow() - timedelta(days=10 - i * 2)
+            ))
+
+        approvals = [
+            ('Site plan approval',      'Pending',       0.25),
+            ('FMB sketch review',       'Under Review',  0.40),
+            ('Setback compliance check','Approved',      0.15),
+            ('EC document review',      'Pending',       0.60),
+        ]
+        for title, status, risk in approvals:
+            db.session.add(ApprovalRequest(
+                title=title,
+                status=status,
+                risk_score=risk,
+                project_id=p.id,
+                submitted_by=arch.username,
+                deadline=datetime.utcnow() + timedelta(days=7)
+            ))
+
+        for doc_type in REQUIRED_DOCUMENT_TYPES:
+            db.session.add(ComplianceRequirement(
+                project_id=p.id,
+                document_type=doc_type,
+            ))
+
+        mom = MeetingMinutes(
+            project_id=p.id,
+            title='Design Review Meeting — 15 Mar 2026',
+            created_by=arch.id,
+            compliance_score=0.78,
+            compliance_status='MARGINAL',
+            compliance_snapshot='{"setback":{"confidence":0.65,"status":"MARGINAL"},'
+                                '"far":{"confidence":0.90,"status":"PASS"},'
+                                '"coverage":{"confidence":0.82,"status":"PASS"}}',
+            share_token=secrets.token_urlsafe(32),
+            creator_signed=True,
+            creator_signed_at=datetime.utcnow() - timedelta(days=1),
+            meeting_date=datetime.utcnow() - timedelta(days=1),
+        )
+        db.session.add(mom)
+        db.session.flush()
+
+        for i, (text, state) in enumerate([
+            ('Increase front setback to 3.5m before resubmission', 'Decided'),
+            ('Submit updated FMB sketch by 22 March',              'Decided'),
+            ('Confirm parking space count with owner',             'Pending'),
+            ('Check with CCMC on road width classification',       'Deferred'),
+        ]):
+            db.session.add(MomItem(
+                mom_id=mom.id, text=text, state=state,
+                order=i, added_by=arch.id
+            ))
+
+        try:
+            db.session.commit()
+            print('Demo data seeded successfully')
+        except Exception as e:
+            db.session.rollback()
+            print(f'Demo seed failed: {e}')
 
 
 app = create_app()

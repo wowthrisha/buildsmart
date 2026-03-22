@@ -123,6 +123,7 @@ def timeline(project_id):
         current_stage=current_stage,
         latest_rejection=latest_rejection,
         user=user,
+        active_project_id=project_id,
     )
 
 
