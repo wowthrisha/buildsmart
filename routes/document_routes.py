@@ -73,9 +73,6 @@ def upload_document():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
 
-    if user.role == "Owner":
-        return redirect(url_for("owner.owner_home"))
-
     title       = request.form.get("title", "")
     description = request.form.get("description", "")
     doc_type    = request.form.get("document_type", "").strip() or None
@@ -132,10 +129,11 @@ def compliance_upload():
 
     doc_type   = request.form.get("document_type", "").strip()
     project_id = int(request.form.get("project_id", 1))
+    next_url   = request.form.get("next", "")
     file       = request.files.get("file")
 
     if not file or not doc_type:
-        return redirect(url_for("compliance.dashboard", project_id=project_id))
+        return redirect(next_url or url_for("compliance.dashboard", project_id=project_id))
 
     os.makedirs("uploads", exist_ok=True)
     filepath = os.path.join("uploads", file.filename)
@@ -196,7 +194,7 @@ def compliance_upload():
         db.session.commit()
         sync_compliance(doc, project_id)
 
-    return redirect(url_for("compliance.dashboard", project_id=project_id))
+    return redirect(next_url or url_for("compliance.dashboard", project_id=project_id))
 
 
 @document_bp.route("/repository")
@@ -204,8 +202,6 @@ def compliance_upload():
 def repository():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
-    if user.role == "Owner":
-        return redirect(url_for("owner.owner_home"))
     return render_template("repository.html", documents=Document.query.all(), user=user)
 
 

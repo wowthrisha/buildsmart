@@ -377,7 +377,15 @@
         <div class="nav-icon">
           <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
-        My documents
+        Project Documents
+      </a>
+
+      <a href="{{ url_for('ref.board_home') }}"
+         class="nav-item {% if request.endpoint in ['ref.board','ref.update_pin'] %}active{% endif %}">
+        <div class="nav-icon" style="{% if request.endpoint in ['ref.board','ref.update_pin'] %}background:rgba(191,95,255,0.12){% endif %}">
+          <svg viewBox="0 0 24 24" style="{% if request.endpoint in ['ref.board','ref.update_pin'] %}stroke:#BF5FFF{% endif %}"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+        </div>
+        Design Board
       </a>
     </div>
 

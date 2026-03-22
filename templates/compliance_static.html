@@ -69,18 +69,19 @@
   </div>
 </div>
 
-<div class="coming-banner">
-  <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-  <span><strong>Preview Mode</strong> — This module is under active development. The UI below is a static preview of the planned features. Backend integration coming soon.</span>
-</div>
-
 <!-- Stats -->
 {% set total_docs = requirements|length %}
+{% set uploaded_docs = requirements | selectattr('document_id') | list | length %}
+{% set missing_docs = total_docs - uploaded_docs %}
+{% set score = ((uploaded_docs / total_docs) * 100) | round | int if total_docs > 0 else 0 %}
+{% set score_color = '#39FF82' if score == 100 else ('#FFD600' if score >= 50 else '#FF4D6D') %}
+{% set score_label = 'Ready' if score == 100 else ('Needs Work' if score >= 50 else 'Not Ready') %}
+
 <div class="stats-row">
   <div class="stat-card">
     <div class="stat-label">Readiness Score</div>
-    <div class="stat-value" style="color:#FF6B1A">0%</div>
-    <div class="stat-sub">0 of {{ total_docs }} docs uploaded</div>
+    <div class="stat-value" style="color:{{ score_color }}">{{ score }}%</div>
+    <div class="stat-sub" style="color:{{ score_color }}">{{ score_label }}</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Required Docs</div>
@@ -88,31 +89,49 @@
     <div class="stat-sub">For {{ project.name }}</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Compliance Gaps</div>
-    <div class="stat-value">4</div>
-    <div class="stat-sub">Critical issues detected</div>
+    <div class="stat-label">Uploaded</div>
+    <div class="stat-value" style="color:#39FF82">{{ uploaded_docs }}</div>
+    <div class="stat-sub">verified & current</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Est. Completion</div>
-    <div class="stat-value">—</div>
-    <div class="stat-sub">Based on activity rate</div>
+    <div class="stat-label">Missing</div>
+    <div class="stat-value" style="color:#FF4D6D">{{ missing_docs }}</div>
+    <div class="stat-sub">action required</div>
   </div>
 </div>
 
 <div class="layout-2">
-  <!-- Checklist -->
+  <!-- Checklist with real upload -->
   <div class="panel">
     <div class="panel-hdr">
       <span class="panel-title">Submission Checklist</span>
-      <span style="font-size:12px;color:var(--text-secondary)">0 / {{ total_docs }} complete</span>
+      <span style="font-size:12px;color:var(--text-secondary)">{{ uploaded_docs }} / {{ total_docs }} uploaded</span>
     </div>
     <div class="checklist">
       {% if requirements %}
         {% for req in requirements %}
-        <div class="check-item">
-          <div class="check-box"></div>
+        {% set is_uploaded = req.document_id is not none %}
+        <div class="check-item" style="opacity:1;{% if is_uploaded %}background:rgba(57,255,130,0.03){% endif %}">
+          <div class="check-box" style="{% if is_uploaded %}background:rgba(57,255,130,0.15);border:1.5px solid #39FF82;display:grid;place-items:center{% endif %}">
+            {% if is_uploaded %}
+            <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:#39FF82;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>
+            {% endif %}
+          </div>
           <span class="check-label">{{ req.document_type }}</span>
-          <span class="check-tag tag-missing">Required</span>
+          {% if is_uploaded %}
+            <span class="check-tag" style="background:rgba(57,255,130,0.12);color:#39FF82">Uploaded</span>
+          {% else %}
+            <form method="POST" action="{{ url_for('document.compliance_upload') }}"
+                  enctype="multipart/form-data" style="margin-left:auto;display:flex;align-items:center;gap:8px">
+              <input type="hidden" name="document_type" value="{{ req.document_type }}">
+              <input type="hidden" name="project_id" value="{{ project.id }}">
+              <input type="hidden" name="next" value="{{ request.url }}">
+              <label style="cursor:pointer;font-size:11px;padding:4px 12px;background:rgba(191,95,255,0.12);border:1px solid rgba(191,95,255,0.3);border-radius:6px;color:#BF5FFF;white-space:nowrap">
+                Upload
+                <input type="file" name="file" style="display:none" onchange="this.form.submit()">
+              </label>
+            </form>
+          {% endif %}
         </div>
         {% endfor %}
       {% else %}

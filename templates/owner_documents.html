@@ -1,71 +1,124 @@
 {% extends "base.html" %}
-{% block title %}My Documents — BuildSmart{% endblock %}
-{% block breadcrumb %}My Documents{% endblock %}
+{% block title %}Project Documents — BuildSmart{% endblock %}
+{% block breadcrumb %}Project Documents{% endblock %}
 {% block page_class %}page-owner{% endblock %}
 
 {% block content %}
 
 <div class="page-header">
   <div class="page-title-group">
-    <div class="page-eyebrow">Owner Vault</div>
-    <h1 class="page-title">My Documents</h1>
-    <p class="page-subtitle">
-      Uploaded sketches and plans · எனது பதிவேற்றிய வரைபடங்கள்
-    </p>
+    <div class="page-eyebrow">Shared Vault</div>
+    <h1 class="page-title">Project Documents</h1>
+    <p class="page-subtitle">All documents uploaded by you and your architect — shared in real time.</p>
   </div>
   <div style="margin-top:4px">
-    <a href="{{ url_for('owner.owner_home') }}" style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;background:#2979FF;color:#000;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 0 16px rgba(41,121,255,0.3)">
+    <button onclick="document.getElementById('upload-modal').style.display='flex'"
+      style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;background:#BF5FFF;color:#000;font-size:13px;font-weight:600;border:none;cursor:pointer;box-shadow:0 0 16px rgba(191,95,255,0.3)">
       <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#000;fill:none;stroke-width:2;stroke-linecap:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Upload new sketch
-    </a>
+      Upload document
+    </button>
   </div>
 </div>
 
 {% if docs %}
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+<div style="display:flex;flex-direction:column;gap:8px">
   {% for doc in docs %}
-  <div style="background:#080808;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(41,121,255,0.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'">
-    <div style="display:flex;align-items:flex-start;gap:14px">
-      <div style="width:40px;height:40px;background:rgba(41,121,255,0.1);border-radius:10px;display:grid;place-items:center;flex-shrink:0;border:1px solid rgba(41,121,255,0.2)">
-        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#2979FF;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:500;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          {{ doc.file_path.split('/')[-1] if doc.file_path else 'Unnamed file' }}
-        </div>
-        <div style="font-size:11px;color:#555;margin-top:3px">
-          Uploaded {{ doc.uploaded_at.strftime('%d %b %Y') if doc.uploaded_at else '—' }}
-        </div>
-        {% if doc.change_notes %}
-        <div style="font-size:12px;color:#666;margin-top:6px;line-height:1.5">{{ doc.change_notes[:80] }}{% if doc.change_notes|length > 80 %}...{% endif %}</div>
-        {% endif %}
-      </div>
+  <div style="background:#080808;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;transition:border-color 0.2s"
+       onmouseover="this.style.borderColor='rgba(191,95,255,0.25)'"
+       onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'">
+
+    <!-- Icon -->
+    <div style="width:40px;height:40px;background:rgba(191,95,255,0.08);border-radius:10px;display:grid;place-items:center;flex-shrink:0;border:1px solid rgba(191,95,255,0.15)">
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#BF5FFF;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     </div>
-    <div style="margin-top:16px;display:flex;gap:8px">
-      <a href="{{ url_for('owner.owner_home') }}" style="flex:1;text-align:center;padding:8px;border-radius:7px;background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.2);color:#2979FF;font-size:12px;text-decoration:none;transition:all 0.15s" onmouseover="this.style.background='rgba(41,121,255,0.2)'" onmouseout="this.style.background='rgba(41,121,255,0.1)'">
-        Run compliance check
-      </a>
+
+    <!-- Info -->
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:500;color:#f0f0f0">{{ doc.title }}</div>
+      <div style="font-size:11px;color:#555;margin-top:2px">
+        {{ doc.document_type or 'General' }}
+        · v{{ doc.current_version }}
+        · {{ doc.created_by }}
+        · {{ doc.created_at.strftime('%d %b %Y') if doc.created_at else '—' }}
+      </div>
+      {% if doc.description %}
+      <div style="font-size:12px;color:#444;margin-top:4px">{{ doc.description[:80] }}{% if doc.description|length > 80 %}...{% endif %}</div>
+      {% endif %}
     </div>
+
+    <!-- Status badge -->
+    {% if doc.is_outdated %}
+    <span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px;background:rgba(255,214,0,0.1);color:#FFD600;white-space:nowrap">Outdated</span>
+    {% else %}
+    <span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px;background:rgba(57,255,130,0.1);color:#39FF82;white-space:nowrap">Current</span>
+    {% endif %}
+
+    <!-- Actions -->
+    <a href="{{ url_for('document.view_versions', document_id=doc.id) }}"
+       style="padding:6px 14px;border-radius:7px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#888;font-size:12px;text-decoration:none;white-space:nowrap">
+      View versions
+    </a>
   </div>
   {% endfor %}
 </div>
 
 {% else %}
-<!-- Empty state -->
 <div style="text-align:center;padding:80px 20px">
-  <div style="width:64px;height:64px;background:rgba(41,121,255,0.08);border-radius:16px;display:grid;place-items:center;margin:0 auto 20px;border:1px solid rgba(41,121,255,0.15)">
-    <svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#2979FF;fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+  <div style="width:64px;height:64px;background:rgba(191,95,255,0.08);border-radius:16px;display:grid;place-items:center;margin:0 auto 20px;border:1px solid rgba(191,95,255,0.15)">
+    <svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#BF5FFF;fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
   </div>
-  <div style="font-size:18px;font-weight:400;color:#f0f0f0;margin-bottom:8px">No documents yet</div>
-  <div style="font-size:13px;color:#555;margin-bottom:8px">வரைபடங்கள் எதுவும் இல்லை</div>
-  <div style="font-size:13px;color:#666;margin-bottom:28px;max-width:340px;margin-left:auto;margin-right:auto;line-height:1.6">
-    Upload your building sketch on the compliance check page and run an AI analysis — it will appear here automatically.
-  </div>
-  <a href="{{ url_for('owner.owner_home') }}" style="display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:8px;background:#2979FF;color:#000;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 0 16px rgba(41,121,255,0.3)">
-    <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:#000;fill:none;stroke-width:2;stroke-linecap:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Upload a sketch
-  </a>
+  <div style="font-size:18px;font-weight:400;color:#f0f0f0;margin-bottom:6px">No documents yet</div>
+  <div style="font-size:13px;color:#555;margin-bottom:24px">Documents uploaded by you or your architect will appear here.</div>
+  <button onclick="document.getElementById('upload-modal').style.display='flex'"
+    style="display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:8px;background:#BF5FFF;color:#000;font-size:13px;font-weight:600;border:none;cursor:pointer">
+    Upload first document
+  </button>
 </div>
 {% endif %}
+
+<!-- Upload modal -->
+<div id="upload-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#0d0d0d;border:1px solid rgba(191,95,255,0.25);border-radius:16px;padding:32px;width:100%;max-width:460px;position:relative">
+    <button onclick="document.getElementById('upload-modal').style.display='none'"
+      style="position:absolute;top:16px;right:16px;background:none;border:none;color:#555;cursor:pointer;font-size:20px">×</button>
+    <div style="font-size:10.5px;color:#BF5FFF;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Upload document</div>
+    <h2 style="font-size:20px;font-weight:400;color:#f0f0f0;margin-bottom:24px">Add to shared vault</h2>
+
+    <form method="POST" action="{{ url_for('document.upload_document') }}" enctype="multipart/form-data">
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Document name</label>
+        <input type="text" name="title" required placeholder="e.g. Patta — Dr. Suresh Plot 42"
+          style="width:100%;background:#0a0a0a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 14px;color:#f0f0f0;font-size:13px;outline:none">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Document type</label>
+        <select name="document_type"
+          style="width:100%;background:#0a0a0a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 14px;color:#f0f0f0;font-size:13px;outline:none">
+          <option value="">General</option>
+          <option value="Structural Drawings">Structural Drawings</option>
+          <option value="Site Plan">Site Plan</option>
+          <option value="FMB Sketch">FMB Sketch</option>
+          <option value="Patta">Patta</option>
+          <option value="EC Document">EC Document</option>
+          <option value="Fire Safety Certificate">Fire Safety Certificate</option>
+          <option value="Electrical Plan">Electrical Plan</option>
+          <option value="Environmental Clearance">Environmental Clearance</option>
+          <option value="Zoning Permit">Zoning Permit</option>
+          <option value="Safety Compliance Document">Safety Compliance Document</option>
+        </select>
+      </div>
+      <input type="hidden" name="project_id" value="1">
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">File</label>
+        <input type="file" name="file" required
+          style="width:100%;background:#0a0a0a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 14px;color:#f0f0f0;font-size:13px">
+      </div>
+      <button type="submit"
+        style="width:100%;padding:12px;border-radius:8px;background:#BF5FFF;border:none;color:#000;font-size:13px;font-weight:600;cursor:pointer">
+        Upload to shared vault
+      </button>
+    </form>
+  </div>
+</div>
 
 {% endblock %}

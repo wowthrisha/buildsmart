@@ -1,6 +1,7 @@
+import json
 import os
 
-from flask import Blueprint, redirect, url_for, flash, render_template
+from flask import Blueprint, jsonify, redirect, request, url_for, flash, render_template
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.user import User
 from models.document import DocumentVersion
@@ -40,13 +41,25 @@ def ask():
     return render_template("owner_ask.html", user=user, buildiq_url=buildiq_url)
 
 
+@owner_bp.route("/save-compliance", methods=["POST"])
+@jwt_required()
+def save_compliance():
+    """Store the owner's last compliance payload to a shared file so MoM can read it."""
+    data = request.get_json(silent=True) or {}
+    if data:
+        path = os.path.join(os.path.dirname(__file__), '..', 'instance', 'last_compliance.json')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(os.path.abspath(path), 'w') as f:
+            json.dump(data, f)
+    return jsonify({'ok': True})
+
+
 @owner_bp.route("/documents")
 @jwt_required()
 def documents():
     user, err = _get_owner_or_redirect()
     if err:
         return err
-    docs = DocumentVersion.query.filter_by(uploaded_by=user.username).order_by(
-        DocumentVersion.uploaded_at.desc()
-    ).all()
+    from models.document import Document
+    docs = Document.query.order_by(Document.created_at.desc()).all()
     return render_template("owner_documents.html", user=user, docs=docs)
